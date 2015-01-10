@@ -21,7 +21,6 @@ public class BoronoiDiagram
             verts.Add(edge.edgeVertexA);
             verts.Add(edge.edgeVertexB);
         }
-
-        corners = verts.Distinct().ToArray();
+        this.corners = verts.Distinct().ToArray();
     }
 }
