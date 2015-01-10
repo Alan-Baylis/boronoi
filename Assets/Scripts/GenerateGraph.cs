@@ -12,6 +12,7 @@ public class GenerateGraph : MonoBehaviour
     private float m_mapWidth = 20;
     private float m_mapHeight = 10;
     private Delaunay.Voronoi v;
+    VoronoiDiagram vorDiag;
 
 	void Start () 
     {
@@ -28,8 +29,11 @@ public class GenerateGraph : MonoBehaviour
 			colors.Add(0);
 			m_points.Add(new Vector2(Random.Range(0, m_mapWidth), Random.Range(0, m_mapHeight)));
 		}
+
 		v = new Delaunay.Voronoi(m_points, colors, new Rect(0, 0, m_mapWidth, m_mapHeight));
 		m_edges = v.VoronoiDiagram();
+        
+        vorDiag = VoronoiDiagram.CreateDiagramFromVoronoiOutput(v, false);
 	}
 
 	void Update()
