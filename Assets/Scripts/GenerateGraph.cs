@@ -7,34 +7,33 @@ using VoronoiNS;
 public class GenerateGraph : MonoBehaviour 
 {
     public int numSitesToGenerate = 10;
-    private List<Vector2> m_points;
-    private List<LineSegment> m_edges = null;
-    private float m_mapWidth = 20;
-    private float m_mapHeight = 10;
-    private Delaunay.Voronoi v;
-    BoronoiDiagram boron;
+    private List<Vector2> points;
+    private List<LineSegment> edges = null;
+    private const float MapWidth = 20;
+    private const float MapHeight = 10;
+    private Delaunay.Voronoi voron;
 
-	void Start () 
+	void Start() 
     {
-		Generate ();
+		Generate();
 	}
 
 	void Generate()
 	{
 		List<uint> colors = new List<uint>();
-		m_points = new List<Vector2>();
+		points = new List<Vector2>();
 		
 		for (int i = 0; i < numSitesToGenerate; i++)
 		{
 			colors.Add(0);
-			m_points.Add(new Vector2(Random.Range(0, m_mapWidth), Random.Range(0, m_mapHeight)));
+			points.Add(new Vector2(Random.Range(0, MapWidth), Random.Range(0, MapHeight)));
 		}
 
-		v = new Delaunay.Voronoi(m_points, colors, new Rect(0, 0, m_mapWidth, m_mapHeight));
-		m_edges = v.VoronoiDiagram();
-
-        boron = new BoronoiDiagram(VoronoiDiagram.CreateDiagramFromVoronoiOutput(v, false));
-
+		voron = new Delaunay.Voronoi(points, colors, new Rect(0, 0, MapWidth, MapHeight));
+		edges = voron.VoronoiDiagram();
+	    
+        var voronDiag = VoronoiDiagram.CreateDiagramFromVoronoiOutput(voron, false);
+	    var map = new Map(voronDiag);
 
 	}
 
@@ -48,26 +47,28 @@ public class GenerateGraph : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        if (v == null)
+        if (voron == null)
+        {
             return;
+        }
 
         Gizmos.color = Color.red;
-        if (m_points != null)
+        if (points != null)
         {
-            for (int i = 0; i < m_points.Count; i++)
+            for (int i = 0; i < points.Count; i++)
             {
-                Gizmos.DrawSphere(m_points[i], 0.02f);
+                Gizmos.DrawSphere(points[i], 0.02f);
             }
         }
 
-        if (m_edges != null)
+        if (edges != null)
         {
             Gizmos.color = Color.gray;
-            for (int i = 0; i < m_edges.Count; i++)
+            for (int i = 0; i < edges.Count; i++)
             {
-                Vector2 left = (Vector2)m_edges[i].p0;
-                Vector2 right = (Vector2)m_edges[i].p1;
-                Gizmos.DrawLine((Vector3)left, (Vector3)right);
+                Vector2 left = (Vector2)edges[i].p0;
+                Vector2 right = (Vector2)edges[i].p1;
+                Gizmos.DrawLine(left, right);
             }
         }
     }

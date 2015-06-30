@@ -1,21 +1,17 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using VoronoiNS;
 
 public class Edge : MapObject
 {
     public List<Cell> cells = new List<Cell>();
-    public List<Corner> corners = new List<Corner>();
+    public List<Vertex> vertices = new List<Vertex>();
 
-    public VoronoiNS.VoronoiCellEdge BoronEdge
+    public VoronoiCellEdge VoronEdge { get; private set; }
+
+    public Edge(VoronoiCellEdge vrnEdge)
     {
-        get
-        {
-            return base.BoronObject as VoronoiNS.VoronoiCellEdge;
-        }
+        VoronEdge = vrnEdge;
     }
-
-
-    public Edge(MonoBehaviour boronObject) : base(boronObject) { }
-
 }
