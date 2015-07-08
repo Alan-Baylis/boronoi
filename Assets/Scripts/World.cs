@@ -20,7 +20,6 @@ namespace Assets
         private Map _map;
         private DataFactory _factory;
 
-        private List<LineSegment> edges;
 
         void Awake()
         {
@@ -39,30 +38,95 @@ namespace Assets
                 );
             }
 
-            var start = System.DateTime.Now;
+            var start = DateTime.Now;
             var v = new Voronoi(points, colors, new Rect(0, 0, Width, Height));
-            edges = v.VoronoiDiagram();
+            var edges = v.VoronoiDiagram();
             Debug.Log("voronoi generation took [" + (DateTime.Now - start).Milliseconds + "] milisecs");
 
-            foreach (var site in v.Sites())
+            foreach (var voronEdge in v.Edges())
             {
-                var s = _factory.CenterFactory(site.Coord.ToVector3xz());
-                foreach (var edge in site.edges)
+                if (voronEdge.leftSite == null
+                    || voronEdge.rightSite == null
+                    || voronEdge.leftVertex == null
+                    || voronEdge.rightVertex == null)
                 {
-                    //var e = _factory.EdgeFactory(edge.) 
+                    continue;
+                }
+
+                var centerLeft = _factory.CenterFactory(voronEdge.leftSite.Coord);
+                var centerRight = _factory.CenterFactory(voronEdge.rightSite.Coord);
+                var cornerLeft = _factory.CornerFactory(voronEdge.leftVertex.Coord);
+                var cornerRight = _factory.CornerFactory(voronEdge.rightVertex.Coord);
+                _factory.EdgeFactory(cornerLeft, cornerRight, centerLeft, centerRight);
+            }
+
+            foreach (var edge in _map.Edges.Values)
+            {
+                edge.VoronoiStart.Protrudes.Add(edge);
+                edge.VoronoiEnd.Protrudes.Add(edge);
+                edge.DelaunayStart.Borders.Add(edge);
+                edge.DelaunayEnd.Borders.Add(edge);
+            }
+
+            foreach (var corner in _map.Corners.Values)
+            {
+                foreach (var edge in corner.Protrudes)
+                {
+                    if (edge.VoronoiStart != corner)
+                    {
+                        corner.Adjacents.Add(edge.VoronoiStart);
+                    }
+                    if (edge.VoronoiEnd != corner)
+                    {
+                        corner.Adjacents.Add(edge.VoronoiEnd);
+                    }
+
+                    // Adding one side of every protruder will make it all
+                    corner.Touches.Add(edge.DelaunayStart);
+                }
+            }
+
+            foreach (var center in _map.Centers.Values)
+            {
+                foreach (var edge in center.Borders)
+                {
+                    if (edge.DelaunayStart != center)
+                    {
+                        center.Neighbours.Add(edge.DelaunayStart);
+                    }
+                    if (edge.DelaunayStart != center)
+                    {
+                        center.Neighbours.Add(edge.DelaunayStart);
+                    }
+
+                    // Adding one side of every border will make it all
+                    center.Corners.Add(edge.VoronoiStart);
                 }
             }
         }
 
         void Update()
         {
-            foreach (var lineSegment in edges)
-            {
-                if (lineSegment.p0 != null & lineSegment.p1 != null)
-                {
-                    Debug.DrawLine((Vector3)lineSegment.p0, (Vector3)lineSegment.p1);
-                }
-            }
+            //foreach (var edge in _map.Edges.Values)
+            //{
+            //    Debug.DrawLine(edge.Corners[0].Point, edge.Corners[1].Point);
+            //}
+
+            //foreach (var corner in _map.Corners.Values)
+            //{
+            //    foreach (var edge in corner.Protrudes)
+            //    {
+            //        Debug.DrawLine(edge.Corners[0].Point, edge.Corners[1].Point);
+            //    }
+            //}
+
+            //foreach (var center in _map.Centers.Values)
+            //{
+            //    foreach (var edge in center.Borders)
+            //    {
+            //        Debug.DrawLine(edge.Corners[0].Point, edge.Corners[1].Point);
+            //    }
+            //}
         }
     }
 }

@@ -55,66 +55,72 @@ namespace Assets.Scripts
 
     public class DataFactory
     {
-        private readonly Map _world;
+        private readonly Map _map;
 
-        public DataFactory(Map world)
+        public DataFactory(Map map)
         {
-            _world = world;
+            _map = map;
         }
 
         #region Implementation of IFactory
 
         public Center CenterFactory(Vector3 p)
         {
-            if(_world.Centers.ContainsKey(p))
+            if(_map.Centers.ContainsKey(p))
             {
-                return _world.Centers[p];
+                return _map.Centers[p];
             }
             else
             {
                 var nc = new Center(p);
-                _world.Centers.Add(nc.Point, nc);
+                _map.Centers.Add(nc.Point, nc);
                 return nc;
             }
         }
 
-        public Edge EdgeFactory(Corner begin, Corner end, Center Left, Center Right)
+        public Edge EdgeFactory(Corner begin, Corner end, Center left, Center right)
         {
-            var p = (begin.Point + end.Point)/2;
-            if (_world.Edges.ContainsKey(p))
+            var midPoint = (begin.Point + end.Point)/2;
+            if (_map.Edges.ContainsKey(midPoint))
             {
-                return _world.Edges[p];
+                return _map.Edges[midPoint];
             }
             else
             {
-                var nc = new Edge(begin, end, Left, Right);
-                _world.Edges.Add(nc.Midpoint, nc);
-                return nc;
+                var edge = new Edge(begin, end, left, right);
+
+                if (_map.Edges.ContainsKey(edge.Midpoint))
+                {
+                    var a = 3;
+                }
+
+                _map.Edges.Add(edge.Midpoint, edge);
+                return edge;
             }
         }
 
         public Corner CornerFactory(Vector3 p)
         {
-            if (_world.Corners.ContainsKey(p))
+            if (_map.Corners.ContainsKey(p))
             {
-                return _world.Corners[p];
+                return _map.Corners[p];
             }
             else
             {
                 var nc = new Corner(p);
-                _world.Corners.Add(nc.Point, nc);
+                _map.Corners.Add(nc.Point, nc);
                 return nc;
             }
         }
 
         public void RemoveEdge(Edge e)
         {
-            _world.Edges.Remove(e.Midpoint);
+            _map.Edges.Remove(e.Midpoint);
         }
 
         public void RemoveCorner(Corner e)
         {
-            _world.Corners.Remove(e.Point);
+            _map.Corners.Remove(e.Point);
         }
 
         #endregion
