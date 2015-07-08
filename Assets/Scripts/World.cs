@@ -6,6 +6,7 @@ using System.Text;
 using Assets.Helpers;
 using Assets.Scripts;
 using Delaunay;
+using Delaunay.Geo;
 using UnityEngine;
 
 namespace Assets
@@ -19,7 +20,9 @@ namespace Assets
         private Map _map;
         private DataFactory _factory;
 
-        public World()
+        private List<LineSegment> edges;
+
+        void Awake()
         {
             _map = new Map();
             _factory = new DataFactory(_map);
@@ -35,15 +38,29 @@ namespace Assets
                         UnityEngine.Random.Range(0, Height))
                 );
             }
+
+            var start = System.DateTime.Now;
             var v = new Voronoi(points, colors, new Rect(0, 0, Width, Height));
-            var edges = v.VoronoiDiagram();
+            edges = v.VoronoiDiagram();
+            Debug.Log("voronoi generation took [" + (DateTime.Now - start).Milliseconds + "] milisecs");
 
             foreach (var site in v.Sites())
             {
                 var s = _factory.CenterFactory(site.Coord.ToVector3xz());
                 foreach (var edge in site.edges)
                 {
-                    //var e = _factory.EdgeFactory(edge.)       
+                    //var e = _factory.EdgeFactory(edge.) 
+                }
+            }
+        }
+
+        void Update()
+        {
+            foreach (var lineSegment in edges)
+            {
+                if (lineSegment.p0 != null & lineSegment.p1 != null)
+                {
+                    Debug.DrawLine((Vector3)lineSegment.p0, (Vector3)lineSegment.p1);
                 }
             }
         }

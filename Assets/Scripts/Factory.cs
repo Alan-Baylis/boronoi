@@ -55,7 +55,7 @@ namespace Assets.Scripts
 
     public class DataFactory
     {
-        private Map _world;
+        private readonly Map _world;
 
         public DataFactory(Map world)
         {
