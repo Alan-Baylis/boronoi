@@ -23,7 +23,7 @@ namespace Assets.Scripts
             DelaunayStart = left;
             DelaunayEnd = right;
             Midpoint = (begin.Point + end.Point) / 2f;
-            States.Add(StateFlags.Water);
+            States = States.Add(StateFlags.Water);
         }
 
         public Edge(int index, Corner begin, Corner end)

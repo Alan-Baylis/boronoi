@@ -6,10 +6,10 @@ using UnityEngine;
 namespace Assets.Scripts
 {
     [Flags]
-    public enum StateFlags
+    public enum StateFlags : int
     {
-        Land = 1,
-        Water = 2,
+        Water = 1,
+        Land = 2,
         ShallowWater = 4,
         Shore = 8,
         River = 16

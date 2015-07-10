@@ -21,14 +21,14 @@ namespace Assets
         public int Width = 100;
         public int Height = 100;
         public int SmoothingFactor;
-        private DataFactory factory;
+        private DataFactory _factory;
         private Map _map;
 
         void Awake()
         {
             var v = GetVoronoi(Width, Height, Seed, SmoothingFactor);
             _map = CreateDataStructure(v);
-
+            
             foreach (var tup in _map.Centers.Where(x => InLand(x.Key,Width,Height,Seed)))
             {
                 var center = tup.Value;
@@ -38,39 +38,38 @@ namespace Assets
                 {
                     c.States = c.States.Add(StateFlags.Land);
                     c.States = c.States.Remove(StateFlags.Water);
-                    
-                    
                 }
-            }
-
-            foreach (var corner in _map.Corners.Values)
-            {
-                if (corner.Touches.Any(x => x.States.Has(StateFlags.Land)) &&
-                    corner.Touches.Any(x => x.States.Has(StateFlags.Water)))
+                foreach (var c in center.Borders)
                 {
-                    corner.States = corner.States.Add(StateFlags.Shore);
-                    var s = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    s.transform.position = corner.Point;
+                    c.States = c.States.Add(StateFlags.Land);
+                    c.States = c.States.Remove(StateFlags.Water);
                 }
-
-
             }
-
+            
             foreach (var edge in _map.Edges.Values)
             {
-                if (edge.VoronoiStart.States.Has(StateFlags.Shore) &&
-                    edge.VoronoiEnd.States.Has(StateFlags.Shore))
+                //edge.IsShore uses site water/land flags
+                if (edge.IsShore())
+                {
                     edge.States = edge.States.Add(StateFlags.Shore);
+                    edge.VoronoiStart.States = edge.VoronoiStart.States.Add(StateFlags.Shore);
+                    edge.VoronoiEnd.States = edge.VoronoiEnd.States.Add(StateFlags.Shore);
+                    edge.DelaunayStart.States = edge.DelaunayStart.States.Add(StateFlags.Shore);
+                    edge.DelaunayEnd.States = edge.DelaunayEnd.States.Add(StateFlags.Shore);
+                }
             }
 
+            _map.GenerateElevation();
+            _map.CreateMesh();
         }
+
 
         private bool InLand(Vector3 p, int w, int h, int s)
         {
             return IsLandShape(new Vector3((float) (2*(p.x/w - 0.5)), 0, (float) (2*(p.z/h - 0.5))), s);
         }
 
-        private bool IsLandShape(Vector3 Vector3, int seed)
+        private bool IsLandShape(Vector3 v, int seed)
         {
             const double islandFactor = 1.02;
             Random.seed = seed;
@@ -79,8 +78,8 @@ namespace Assets
             double dipAngle = Random.Range(0f, 1f) * 2 * Math.PI;
             double dipWidth = Random.Range(2f, 7f) / 10;
 
-            double angle = Math.Atan2(Vector3.z, Vector3.x);
-            double length = 0.5 * (Math.Max(Math.Abs(Vector3.x), Math.Abs(Vector3.z)) + Vector3.magnitude);
+            double angle = Math.Atan2(v.z, v.x);
+            double length = 0.5 * (Math.Max(Math.Abs(v.x), Math.Abs(v.z)) + v.magnitude);
 
             double r1 = 0.5 + 0.40 * Math.Sin(startAngle + bumps * angle + Math.Cos((bumps + 3) * angle));
             double r2 = 0.7 - 0.20 * Math.Sin(startAngle + bumps * angle - Math.Sin((bumps + 2) * angle));
@@ -96,7 +95,7 @@ namespace Assets
         private Map CreateDataStructure(Voronoi v)
         {
             var map = new Map();
-            factory = new DataFactory(map);
+            _factory = new DataFactory(map);
             foreach (var voronEdge in v.Edges())
             {
                 if (voronEdge.leftSite == null
@@ -107,11 +106,11 @@ namespace Assets
                     continue;
                 }
 
-                var centerLeft = factory.CenterFactory(voronEdge.leftSite.Coord.ToVector3xz());
-                var centerRight = factory.CenterFactory(voronEdge.rightSite.Coord.ToVector3xz());
-                var cornerLeft = factory.CornerFactory(voronEdge.leftVertex.Coord.ToVector3xz());
-                var cornerRight = factory.CornerFactory(voronEdge.rightVertex.Coord.ToVector3xz());
-                factory.EdgeFactory(cornerLeft, cornerRight, centerLeft, centerRight);
+                var centerLeft = _factory.CenterFactory(voronEdge.leftSite.Coord.ToVector3xz());
+                var centerRight = _factory.CenterFactory(voronEdge.rightSite.Coord.ToVector3xz());
+                var cornerLeft = _factory.CornerFactory(voronEdge.leftVertex.Coord.ToVector3xz());
+                var cornerRight = _factory.CornerFactory(voronEdge.rightVertex.Coord.ToVector3xz());
+                _factory.EdgeFactory(cornerLeft, cornerRight, centerLeft, centerRight);
             }
 
             foreach (var edge in map.Edges.Values)
@@ -137,6 +136,7 @@ namespace Assets
 
                     // Adding one side of every protruder will make it all
                     corner.Touches.Add(edge.DelaunayStart);
+                    corner.Touches.Add(edge.DelaunayEnd);
                 }
             }
 
@@ -206,33 +206,20 @@ namespace Assets
 
         void Update()
         {
-            //foreach (var edge in _map.Edges.Values)
+            //foreach (var center in _map.Centers.Values.Where(x => (x.States & StateFlags.Land) != 0))
             //{
-            //    Debug.DrawLine(edge.Corners[0].Point, edge.Corners[1].Point);
-            //}
-
-            //foreach (var corner in _map.Corners.Values)
-            //{
-            //    foreach (var edge in corner.Protrudes)
+            //    foreach (var edge in center.Borders)
             //    {
             //        Debug.DrawLine(edge.Corners[0].Point, edge.Corners[1].Point);
             //    }
             //}
 
-            foreach (var center in _map.Centers.Values.Where(x => (x.States & StateFlags.Land) != 0))
-            {
-                foreach (var edge in center.Borders)
-                {
-                    Debug.DrawLine(edge.Corners[0].Point, edge.Corners[1].Point);
-                }
-            }
+            //foreach (var edge in _map.Edges.Values)
+            //{
+            //    if(edge.States.Has(StateFlags.Shore))
+            //        Debug.DrawLine(edge.VoronoiStart.Point, edge.VoronoiEnd.Point, Color.red);
 
-            foreach (var edge in _map.Edges.Values)
-            {
-                if(edge.States.Has(StateFlags.Shore))
-                    Debug.DrawLine(edge.VoronoiStart.Point, edge.VoronoiEnd.Point, Color.red);
-
-            }
+            //}
         }
     }
 }

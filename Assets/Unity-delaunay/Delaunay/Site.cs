@@ -169,7 +169,7 @@ namespace Delaunay
 			}
 			return list;
 		}
-			
+		
 		private Site NeighborSite (Edge edge)
 		{
 			if (this == edge.leftSite) {
