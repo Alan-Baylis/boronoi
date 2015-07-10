@@ -29,10 +29,38 @@ namespace Assets
             var v = GetVoronoi(Width, Height, Seed, SmoothingFactor);
             _map = CreateDataStructure(v);
 
-            foreach (var center in _map.Centers.Where(x => InLand(x.Key,Width,Height,Seed)))
+            foreach (var tup in _map.Centers.Where(x => InLand(x.Key,Width,Height,Seed)))
             {
-                var s = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                s.transform.position = center.Key;
+                var center = tup.Value;
+                center.States = center.States.Add(StateFlags.Land);
+                center.States = center.States.Remove(StateFlags.Water);
+                foreach (var c in center.Corners)
+                {
+                    c.States = c.States.Add(StateFlags.Land);
+                    c.States = c.States.Remove(StateFlags.Water);
+                    
+                    
+                }
+            }
+
+            foreach (var corner in _map.Corners.Values)
+            {
+                if (corner.Touches.Any(x => x.States.Has(StateFlags.Land)) &&
+                    corner.Touches.Any(x => x.States.Has(StateFlags.Water)))
+                {
+                    corner.States = corner.States.Add(StateFlags.Shore);
+                    var s = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    s.transform.position = corner.Point;
+                }
+
+
+            }
+
+            foreach (var edge in _map.Edges.Values)
+            {
+                if (edge.VoronoiStart.States.Has(StateFlags.Shore) &&
+                    edge.VoronoiEnd.States.Has(StateFlags.Shore))
+                    edge.States = edge.States.Add(StateFlags.Shore);
             }
 
         }
@@ -127,6 +155,7 @@ namespace Assets
 
                     // Adding one side of every border will make it all
                     center.Corners.Add(edge.VoronoiStart);
+                    center.Corners.Add(edge.VoronoiEnd);
                 }
             }
             return map;
@@ -190,12 +219,19 @@ namespace Assets
             //    }
             //}
 
-            foreach (var center in _map.Centers.Values)
+            foreach (var center in _map.Centers.Values.Where(x => (x.States & StateFlags.Land) != 0))
             {
                 foreach (var edge in center.Borders)
                 {
                     Debug.DrawLine(edge.Corners[0].Point, edge.Corners[1].Point);
                 }
+            }
+
+            foreach (var edge in _map.Edges.Values)
+            {
+                if(edge.States.Has(StateFlags.Shore))
+                    Debug.DrawLine(edge.VoronoiStart.Point, edge.VoronoiEnd.Point, Color.red);
+
             }
         }
     }

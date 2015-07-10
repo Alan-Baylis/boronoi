@@ -1,4 +1,5 @@
 ﻿using System;
+using Assets.Helpers;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -13,6 +14,8 @@ namespace Assets.Scripts
         public Corner VoronoiEnd { get; private set; }// Voronoi edge
         public Corner[] Corners { get { return new[] { VoronoiStart, VoronoiEnd }; } }
 
+        public StateFlags States { get; set; }
+
         public Edge(Corner begin, Corner end, Center left, Center right)
         {
             VoronoiStart = begin;
@@ -20,12 +23,14 @@ namespace Assets.Scripts
             DelaunayStart = left;
             DelaunayEnd = right;
             Midpoint = (begin.Point + end.Point) / 2f;
+            States.Add(StateFlags.Water);
         }
 
         public Edge(int index, Corner begin, Corner end)
         {
             VoronoiStart = begin;
             VoronoiEnd = end;
+            States = States.Add(StateFlags.Water);
         }
     }
 }
