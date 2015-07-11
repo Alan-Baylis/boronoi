@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
@@ -14,21 +15,20 @@ namespace Assets.Scripts
 
         public int GetHashCode(Center obj)
         {
-            return obj.Point.GetHashCode();
+            return (int)(obj.Point.x * 10000 + obj.Point.z);
         }
     }
 
     class CornerComparer : IEqualityComparer<Corner>
     {
-        public CornerComparer() { }
         public bool Equals(Corner x, Corner y)
         {
-            return x.Point.Equals(y.Point);
+            return Math.Abs(x.Point.x - y.Point.x) < 0.1 && Math.Abs(x.Point.z - y.Point.z) < 0.1;
         }
 
         public int GetHashCode(Corner obj)
         {
-            return obj.Point.GetHashCode();
+            return (int) (obj.Point.x * 10000 + obj.Point.z);
         }
     }
 

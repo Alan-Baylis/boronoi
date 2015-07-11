@@ -51,6 +51,7 @@ namespace Assets
                 //edge.IsShore uses site water/land flags
                 if (edge.IsShore())
                 {
+                    _map.Shoreline.Add(edge);
                     edge.States = edge.States.Add(StateFlags.Shore);
                     edge.VoronoiStart.States = edge.VoronoiStart.States.Add(StateFlags.Shore);
                     edge.VoronoiEnd.States = edge.VoronoiEnd.States.Add(StateFlags.Shore);

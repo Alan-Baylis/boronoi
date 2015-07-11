@@ -24,6 +24,7 @@ namespace Assets.Scripts
         public HashSet<Corner> Corners { get; set; }
 
         public StateFlags States { get; set; }
+        public Vector3 Normal { get; set; }
 
         public Center(Vector3 p)
         {

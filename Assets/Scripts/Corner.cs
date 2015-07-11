@@ -15,6 +15,8 @@ namespace Assets.Scripts
 
         public StateFlags States { get; set; }
 
+        public Vector3 Normal { get; set; }
+
         public Corner(Vector3 p)
         {
             Point = p;

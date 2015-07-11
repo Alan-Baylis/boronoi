@@ -12,5 +12,21 @@ namespace Assets.Helpers
         {
             return new Vector3(v.x, 0, v.y);
         }
+
+        public static Vector3 ToVector3xz(this Vector3 v)
+        {
+            return new Vector3(v.x, 0, v.z);
+        }
+
+        public static Vector3 TriangleNormal(this Vector3 x, Vector3 y, Vector3 z)
+        {
+            return Vector3.Cross(x-y, y-z);
+        }
+
+        public static float Area(this Vector3 a, Vector3 b, Vector3 c)
+        {
+            //brnkhy - this looks retarded
+            return ((a.x - c.x) * (b.z - c.z) - (a.z - c.z) * (b.x - c.x)) / 2;
+        }
     }
 }
