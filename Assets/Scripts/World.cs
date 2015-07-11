@@ -61,6 +61,7 @@ namespace Assets
             }
 
             _map.GenerateElevation();
+            _map.GenerateRivers();
             _map.CreateMesh();
         }
 
@@ -168,13 +169,13 @@ namespace Assets
             sw.Start();
 
             var points = new List<Vector2>();
-            UnityEngine.Random.seed = seed;
+            Random.seed = seed;
 
             for (int i = 0; i < SiteCount; i++)
             {
                 points.Add(new Vector2(
-                    UnityEngine.Random.Range(0f, width),
-                    UnityEngine.Random.Range(0f, height))
+                    Random.Range(0f, width),
+                    Random.Range(0f, height))
                     );
             }
             var v = new Voronoi(points, null, new Rect(0, 0, width, height));

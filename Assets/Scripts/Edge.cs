@@ -15,6 +15,7 @@ namespace Assets.Scripts
         public Corner[] Corners { get { return new[] { VoronoiStart, VoronoiEnd }; } }
 
         public StateFlags States { get; set; }
+        public float Flow { get; set; }
 
         public Edge(Corner begin, Corner end, Center left, Center right)
         {

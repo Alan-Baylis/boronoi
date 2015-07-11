@@ -5,11 +5,13 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Assets.Scripts;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Assets.Helpers
 {
     public static class EnumerationExtensions
     {
+        #region StateFlags
         public static bool Has(this StateFlags type, StateFlags value)
         {
             return (type & value) == value;
@@ -20,18 +22,18 @@ namespace Assets.Helpers
             return type == value;
         }
 
-
         public static StateFlags Add(this StateFlags type, StateFlags value)
         {
             return type | value;
         }
 
-
         public static StateFlags Remove(this StateFlags type, StateFlags value)
         {
             return type & ~value;
         }
+        #endregion
 
+        #region Map
         public static void CreateMesh(this Map map)
         {
             var vertices = new List<Vector3>();
@@ -77,7 +79,51 @@ namespace Assets.Helpers
                 triangles.Add(lastVertex);
             }
             
-            var go = new GameObject();
+            // Rivers
+            // Each river edge is made up with 2 tris
+            const float riverWidth = 2f; // In world units
+            var riverEdges = map.Edges.Values.Where(x => x.States.Has(StateFlags.River)).ToList();
+            foreach (var riverEdge in riverEdges)
+            {
+                var upperCorner = riverEdge.VoronoiStart.Point.y > riverEdge.VoronoiEnd.Point.y
+                    ? riverEdge.VoronoiStart
+                    : riverEdge.VoronoiEnd;
+
+                var lowerCorner = riverEdge.VoronoiStart.Point.y < riverEdge.VoronoiEnd.Point.y
+                    ? riverEdge.VoronoiStart
+                    : riverEdge.VoronoiEnd;
+
+                var edgeDir = (lowerCorner.Point - upperCorner.Point).normalized;
+                var leftNudge = Quaternion.Euler(Vector3.up * 90) * edgeDir * riverWidth + Vector3.up;
+                var rightNudge = Quaternion.Euler(Vector3.up * -90) * edgeDir * riverWidth + Vector3.up;
+
+                vertices.AddRange(new List<Vector3>
+                {
+                    upperCorner.Point + leftNudge,
+                    upperCorner.Point + rightNudge,
+                    lowerCorner.Point + leftNudge,
+                    lowerCorner.Point + rightNudge
+                });
+
+                normals.AddRange(new List<Vector3>
+                {
+                    upperCorner.Normal,
+                    upperCorner.Normal,
+                    lowerCorner.Normal,
+                    lowerCorner.Normal,
+                });
+
+                triangles.AddRange(new List<int>
+                {
+                    vertices.Count - 4, vertices.Count - 3, vertices.Count - 2, // upLeft, upRight, lowLeft
+                    vertices.Count - 2, vertices.Count - 3, vertices.Count - 1, // lowLeft, upRight, lowRight
+                });
+
+                colors.AddRange(new List<Color> { Color.blue, Color.blue, Color.blue, Color.blue });
+            }
+
+            // Instantiating things
+            var go = new GameObject("Island");
             var rend = go.AddComponent<MeshRenderer>();
             rend.material.shader = Resources.Load<Shader>("VertexColor");
             var mesh = new Mesh { name = "HexMesh" };
@@ -176,5 +222,37 @@ namespace Assets.Helpers
                 center.Normal = ave.normalized;
             }
         }
+
+        public static void GenerateRivers(this Map map)
+        {
+            var riverCount = Random.Range(2, 4);
+
+            for (int i = 0; i < riverCount; i++)
+            {
+                // Select a random non-shore corner
+                // TODO ATIL: Can be selected a little further inland
+                Corner randomCorner;
+                do
+                {
+                    randomCorner = map.Corners.Values.ElementAt(Random.Range(0, map.Corners.Count));
+                }
+                while (!randomCorner.States.Has(StateFlags.Land) || randomCorner.States.Has(StateFlags.Shore));
+
+                GameObject.CreatePrimitive(PrimitiveType.Sphere).transform.position = randomCorner.Point;
+
+                // Percolate down until a shore is found
+                for (Corner c = randomCorner, minAdj; !c.IsShore(); c = minAdj)
+                {
+                    // Find min among adjecents
+                    minAdj = c.Adjacents.Aggregate((curMin, x) => x.Point.y < curMin.Point.y ? x : curMin);
+
+                    var riverEdge = map.Edges[(c.Point + minAdj.Point).ToVector3xz() / 2f];
+                    riverEdge.States = riverEdge.States.Add(StateFlags.River);
+                    riverEdge.Flow += 1f;
+
+                }
+            }
+        }
+        #endregion
     }
 }

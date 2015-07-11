@@ -41,14 +41,18 @@ namespace Assets.Helpers
             if (center.States.Has(StateFlags.Land))
             {
                 if (center.States.Has(StateFlags.Shore))
+                {
                     return new Color(239f / 255f, 221f / 255f, 111f / 255f);
+                }
 
                 return new Color(0f / 255f, 155f / 255f, 0f / 255f); 
             }
             else if (center.States.Has(StateFlags.Water))
             {
                 if (center.States.Has(StateFlags.Shore))
+                {
                     return new Color(0 / 50, 66f / 255f, 166f / 255f);
+                }
 
                 return new Color(0f / 255f, 0 / 255f, 0f / 255f);
             }
