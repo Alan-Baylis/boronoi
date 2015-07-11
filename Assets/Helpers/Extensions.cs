@@ -12,24 +12,24 @@ namespace Assets.Helpers
     public static class EnumerationExtensions
     {
         #region StateFlags
-        public static bool Has(this StateFlags type, StateFlags value)
+        public static bool Has(this ObjectProp type, ObjectProp value)
         {
             return (type & value) == value;
         }
 
-        public static bool Is(this StateFlags type, StateFlags value)
+        public static bool Is(this ObjectProp type, ObjectProp value)
         {
             return type == value;
         }
 
-        public static StateFlags Add(this StateFlags type, StateFlags value)
+        public static void Add(this ObjectProp type, ObjectProp value)
         {
-            return type | value;
+             type |= value;
         }
 
-        public static StateFlags Remove(this StateFlags type, StateFlags value)
+        public static void Remove(this ObjectProp type, ObjectProp value)
         {
-            return type & ~value;
+            type &= ~value;
         }
         #endregion
 
@@ -41,7 +41,7 @@ namespace Assets.Helpers
             var triangles = new List<int>();
             var normals = new List<Vector3>();
 
-            foreach (var center in map.Centers.Values.Where(x => x.States.Has(StateFlags.Land) || x.States.Has(StateFlags.ShallowWater)))
+            foreach (var center in map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Land) || x.Props.Has(ObjectProp.ShallowWater)))
             {
                 //fuck this
                 center.OrderCorners();
@@ -82,7 +82,7 @@ namespace Assets.Helpers
             // Rivers
             // Each river edge is made up with 2 tris
             const float riverWidth = 2f; // In world units
-            var riverEdges = map.Edges.Values.Where(x => x.States.Has(StateFlags.River)).ToList();
+            var riverEdges = map.Edges.Values.Where(x => x.Props.Has(ObjectProp.River)).ToList();
             foreach (var riverEdge in riverEdges)
             {
                 var upperCorner = riverEdge.VoronoiStart.Point.y > riverEdge.VoronoiEnd.Point.y
@@ -141,7 +141,7 @@ namespace Assets.Helpers
 
             foreach (var corner in map.Corners.Values)
             {
-                if (corner.States.Has(StateFlags.Shore))
+                if (corner.Props.Has(ObjectProp.Shore))
                 {
                     lands.Enqueue(corner);
                 }
@@ -155,9 +155,9 @@ namespace Assets.Helpers
             while (lands.Any())
             {
                 var c = lands.Dequeue();
-                foreach (var a in c.Adjacents.Where(x => !x.States.Has(StateFlags.Water) && !x.States.Has(StateFlags.Shore)))
+                foreach (var a in c.Adjacents.Where(x => !x.Props.Has(ObjectProp.Water) && !x.Props.Has(ObjectProp.Shore)))
                 {
-                    var newElevation = (float)(!a.States.Has(StateFlags.Water)
+                    var newElevation = (float)(!a.Props.Has(ObjectProp.Water)
                         ? c.Point.y * 1.07 + 1
                         : c.Point.y);
 
@@ -236,7 +236,7 @@ namespace Assets.Helpers
                 {
                     randomCorner = map.Corners.Values.ElementAt(Random.Range(0, map.Corners.Count));
                 }
-                while (!randomCorner.States.Has(StateFlags.Land) || randomCorner.States.Has(StateFlags.Shore));
+                while (!randomCorner.Props.Has(ObjectProp.Land) || randomCorner.Props.Has(ObjectProp.Shore));
 
                 GameObject.CreatePrimitive(PrimitiveType.Sphere).transform.position = randomCorner.Point;
 
@@ -247,9 +247,8 @@ namespace Assets.Helpers
                     minAdj = c.Adjacents.Aggregate((curMin, x) => x.Point.y < curMin.Point.y ? x : curMin);
 
                     var riverEdge = map.Edges[(c.Point + minAdj.Point).ToVector3xz() / 2f];
-                    riverEdge.States = riverEdge.States.Add(StateFlags.River);
+                    riverEdge.Props.Add(ObjectProp.River);
                     riverEdge.Flow += 1f;
-
                 }
             }
         }

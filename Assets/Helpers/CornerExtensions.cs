@@ -10,8 +10,8 @@ namespace Assets.Helpers
     {
         public static bool IsShore(this Corner corner)
         {
-            return corner.Touches.Any(x => x.States.Has(StateFlags.Land)) &&
-                    corner.Touches.Any(x => x.States.Has(StateFlags.Water));
+            return corner.Touches.Any(x => x.Props.Has(ObjectProp.Land)) &&
+                    corner.Touches.Any(x => x.Props.Has(ObjectProp.Water));
         }
     }
 }

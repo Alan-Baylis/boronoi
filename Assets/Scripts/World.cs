@@ -32,17 +32,17 @@ namespace Assets
             foreach (var tup in _map.Centers.Where(x => InLand(x.Key,Width,Height,Seed)))
             {
                 var center = tup.Value;
-                center.States = center.States.Add(StateFlags.Land);
-                center.States = center.States.Remove(StateFlags.Water);
+                center.Props.Add(ObjectProp.Land);
+                center.Props.Remove(ObjectProp.Water);
                 foreach (var c in center.Corners)
                 {
-                    c.States = c.States.Add(StateFlags.Land);
-                    c.States = c.States.Remove(StateFlags.Water);
+                    c.Props.Add(ObjectProp.Land);
+                    c.Props.Remove(ObjectProp.Water);
                 }
                 foreach (var c in center.Borders)
                 {
-                    c.States = c.States.Add(StateFlags.Land);
-                    c.States = c.States.Remove(StateFlags.Water);
+                    c.Props.Add(ObjectProp.Land);
+                    c.Props.Remove(ObjectProp.Water);
                 }
             }
             
@@ -52,11 +52,11 @@ namespace Assets
                 if (edge.IsShore())
                 {
                     _map.Shoreline.Add(edge);
-                    edge.States = edge.States.Add(StateFlags.Shore);
-                    edge.VoronoiStart.States = edge.VoronoiStart.States.Add(StateFlags.Shore);
-                    edge.VoronoiEnd.States = edge.VoronoiEnd.States.Add(StateFlags.Shore);
-                    edge.DelaunayStart.States = edge.DelaunayStart.States.Add(StateFlags.Shore);
-                    edge.DelaunayEnd.States = edge.DelaunayEnd.States.Add(StateFlags.Shore);
+                    edge.Props.Add(ObjectProp.Shore);
+                    edge.VoronoiStart.Props.Add(ObjectProp.Shore);
+                    edge.VoronoiEnd.Props.Add(ObjectProp.Shore);
+                    edge.DelaunayStart.Props.Add(ObjectProp.Shore);
+                    edge.DelaunayEnd.Props.Add(ObjectProp.Shore);
                 }
             }
 

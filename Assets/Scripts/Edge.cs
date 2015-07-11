@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-    public class Edge : IMapItem
+    public class Edge : MapObject
     {
         public int Index { get; set; }
         public Vector3 Midpoint { get; private set; }
@@ -14,7 +14,6 @@ namespace Assets.Scripts
         public Corner VoronoiEnd { get; private set; }// Voronoi edge
         public Corner[] Corners { get { return new[] { VoronoiStart, VoronoiEnd }; } }
 
-        public StateFlags States { get; set; }
         public float Flow { get; set; }
 
         public Edge(Corner begin, Corner end, Center left, Center right)
@@ -24,14 +23,14 @@ namespace Assets.Scripts
             DelaunayStart = left;
             DelaunayEnd = right;
             Midpoint = (begin.Point + end.Point) / 2f;
-            States = States.Add(StateFlags.Water);
+            Props.Add(ObjectProp.Water);
         }
 
         public Edge(int index, Corner begin, Corner end)
         {
             VoronoiStart = begin;
             VoronoiEnd = end;
-            States = States.Add(StateFlags.Water);
+            Props.Add(ObjectProp.Water);
         }
     }
 }

@@ -10,10 +10,10 @@ namespace Assets.Helpers
     {
         public static bool IsShore(this Edge edge)
         {
-            return (edge.DelaunayStart.States.Has(StateFlags.Water) &&
-                    edge.DelaunayEnd.States.Has(StateFlags.Land)) ||
-                   (edge.DelaunayEnd.States.Has(StateFlags.Water) &&
-                    edge.DelaunayStart.States.Has(StateFlags.Land));
+            return (edge.DelaunayStart.Props.Has(ObjectProp.Water) &&
+                    edge.DelaunayEnd.Props.Has(ObjectProp.Land)) ||
+                   (edge.DelaunayEnd.Props.Has(ObjectProp.Water) &&
+                    edge.DelaunayStart.Props.Has(ObjectProp.Land));
         }
     }
 }
