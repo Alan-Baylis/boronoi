@@ -37,6 +37,7 @@ namespace Assets.Helpers
             var vertices = new List<Vector3>();
             var colors = new List<Color>();
             var triangles = new List<int>();
+            var normals = new List<Vector3>();
 
             foreach (var center in map.Centers.Values.Where(x => x.States.Has(StateFlags.Land) || x.States.Has(StateFlags.ShallowWater)))
             {
@@ -45,11 +46,19 @@ namespace Assets.Helpers
 
                 var startingIndex = vertices.Count;
                 vertices.Add(center.Point);
-                vertices.AddRange(center.Corners.Select((t, i) => center.Corners.ElementAt(i)).Select(corner => corner.Point));
+                normals.Add(center.Normal);
+                foreach (var corner in center.Corners)
+                {
+                    vertices.Add(corner.Point);
+                    normals.Add(corner.Normal);
+                }
+
                 var lastVertex = 0;
                 var color = center.GetBiomeColor();
+                //center color
+                colors.Add(color);
 
-                for (int i = startingIndex; i < startingIndex + center.Corners.Count; i++)
+                for (int i = startingIndex + 1; i < startingIndex + center.Corners.Count; i++)
                 {
                     triangles.Add(startingIndex);
                     triangles.Add(i + 1);
@@ -67,7 +76,7 @@ namespace Assets.Helpers
                 triangles.Add(startingIndex + 1);
                 triangles.Add(lastVertex);
             }
-
+            
             var go = new GameObject();
             var rend = go.AddComponent<MeshRenderer>();
             rend.material.shader = Resources.Load<Shader>("VertexColor");
@@ -77,6 +86,7 @@ namespace Assets.Helpers
             mesh.vertices = vertices.ToArray();
             mesh.triangles = triangles.ToArray();
             mesh.colors = colors.ToArray();
+            mesh.normals = normals.ToArray();
         }
 
         public static void GenerateElevation(this Map map)
@@ -125,10 +135,45 @@ namespace Assets.Helpers
                         corner.Point.z);
                 }
             }
+            
+            foreach (var corner in map.Corners.Values)
+            {
+                var sum = Vector3.zero;
+                var count = 0;
+                foreach (var ce in corner.Touches)
+                {
+                    foreach (var c in ce.Corners)
+                    {
+                        if (corner.Adjacents.Contains(c))
+                        {
+                            if (ce.Point.Area(corner.Point, c.Point) < 0)
+                            {
+                                sum += ce.Point.TriangleNormal(corner.Point, c.Point).normalized;
+                            }
+                            else
+                            {
+                                sum += ce.Point.TriangleNormal(c.Point, corner.Point).normalized;
+                            }
+
+                            count++;
+                        }
+                    }
+                }
+                corner.Normal = (sum/count).normalized;
+            }
 
             foreach (var center in map.Centers.Values)
             {
                 center.Point = new Vector3(center.Point.x, center.Corners.Sum(x => x.Point.y) / center.Corners.Count, center.Point.z);
+
+                //TODO really need an vector3 average function
+                var sum = Vector3.zero;
+                foreach (var corner in center.Corners)
+                {
+                    sum += corner.Normal;
+                }
+                var ave = sum/center.Corners.Count;
+                center.Normal = ave.normalized;
             }
         }
     }
