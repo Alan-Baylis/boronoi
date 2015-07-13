@@ -14,6 +14,8 @@ namespace Assets.Scripts
         public HashSet<Corner> Corners { get; set; }
 
         public Vector3 Normal { get; set; }
+        public float Moisture { get; set; }
+        public Biome Biome { get; set; }
 
         public Center(Vector3 p)
         {

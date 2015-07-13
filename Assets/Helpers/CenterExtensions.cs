@@ -40,6 +40,10 @@ namespace Assets.Helpers
         {
             if (center.Props.Has(ObjectProp.Land))
             {
+                //brnkhy yields moisture map
+                var moisture = center.Corners.Average(x => x.Moisture);
+                return new Color(0f / 255f, 1f / 255f, moisture);
+
                 if (center.Props.Has(ObjectProp.Shore))
                 {
                     return new Color(239f / 255f, 221f / 255f, 111f / 255f);

@@ -14,6 +14,7 @@ using Random = UnityEngine.Random;
 
 namespace Assets
 {
+    [ExecuteInEditMode]
     public class World : MonoBehaviour
     {
         public int Seed = 4;
@@ -26,10 +27,15 @@ namespace Assets
 
         void Awake()
         {
+            Build();
+        }
+
+        public void Build()
+        {
             var v = GetVoronoi(Width, Height, Seed, SmoothingFactor);
             _map = CreateDataStructure(v);
-            
-            foreach (var tup in _map.Centers.Where(x => InLand(x.Key,Width,Height,Seed)))
+
+            foreach (var tup in _map.Centers.Where(x => InLand(x.Key, Width, Height, Seed)))
             {
                 var center = tup.Value;
                 center.Props.Add(ObjectProp.Land);
@@ -45,7 +51,7 @@ namespace Assets
                     c.Props.Remove(ObjectProp.Water);
                 }
             }
-            
+
             foreach (var edge in _map.Edges.Values)
             {
                 //edge.IsShore uses site water/land flags
@@ -62,6 +68,8 @@ namespace Assets
 
             _map.GenerateElevation();
             _map.GenerateRivers();
+            _map.GenerateMoisture();
+            _map.GenerateBiome();
             _map.CreateMesh();
         }
 
@@ -112,7 +120,7 @@ namespace Assets
                 var centerRight = _factory.CenterFactory(voronEdge.rightSite.Coord.ToVector3xz());
                 var cornerLeft = _factory.CornerFactory(voronEdge.leftVertex.Coord.ToVector3xz());
                 var cornerRight = _factory.CornerFactory(voronEdge.rightVertex.Coord.ToVector3xz());
-                _factory.EdgeFactory(cornerLeft, cornerRight, centerLeft, centerRight);
+                var ed = _factory.EdgeFactory(cornerLeft, cornerRight, centerLeft, centerRight);
             }
 
             foreach (var edge in map.Edges.Values)
@@ -160,6 +168,7 @@ namespace Assets
                     center.Corners.Add(edge.VoronoiEnd);
                 }
             }
+
             return map;
         }
 
@@ -216,11 +225,14 @@ namespace Assets
             //    }
             //}
 
-            //foreach (var edge in _map.Edges.Values)
+            //if (_map != null)
             //{
-            //    if(edge.States.Has(StateFlags.Shore))
-            //        Debug.DrawLine(edge.VoronoiStart.Point, edge.VoronoiEnd.Point, Color.red);
+            //    foreach (var edge in _map.Edges.Values)
+            //    {
+            //        if (edge.Props.Has(ObjectProp.River))
+            //            Debug.DrawLine(edge.VoronoiStart.Point, edge.VoronoiEnd.Point, Color.blue);
 
+            //    }
             //}
         }
     }

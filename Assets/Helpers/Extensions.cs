@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Assets.Scripts;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
 
 namespace Assets.Helpers
@@ -56,7 +58,7 @@ namespace Assets.Helpers
                 }
 
                 var lastVertex = 0;
-                var color = center.GetBiomeColor();
+                var color = center.Biome.Color;
                 //center color
                 colors.Add(color);
 
@@ -79,53 +81,10 @@ namespace Assets.Helpers
                 triangles.Add(lastVertex);
             }
             
-            // Rivers
-            // Each river edge is made up with 2 tris
-            const float riverWidth = 2f; // In world units
-            var riverEdges = map.Edges.Values.Where(x => x.Props.Has(ObjectProp.River)).ToList();
-            foreach (var riverEdge in riverEdges)
-            {
-                var upperCorner = riverEdge.VoronoiStart.Point.y > riverEdge.VoronoiEnd.Point.y
-                    ? riverEdge.VoronoiStart
-                    : riverEdge.VoronoiEnd;
-
-                var lowerCorner = riverEdge.VoronoiStart.Point.y < riverEdge.VoronoiEnd.Point.y
-                    ? riverEdge.VoronoiStart
-                    : riverEdge.VoronoiEnd;
-
-                var edgeDir = (lowerCorner.Point - upperCorner.Point).normalized;
-                var leftNudge = Quaternion.Euler(Vector3.up * 90) * edgeDir * riverWidth + Vector3.up;
-                var rightNudge = Quaternion.Euler(Vector3.up * -90) * edgeDir * riverWidth + Vector3.up;
-
-                vertices.AddRange(new List<Vector3>
-                {
-                    upperCorner.Point + leftNudge,
-                    upperCorner.Point + rightNudge,
-                    lowerCorner.Point + leftNudge,
-                    lowerCorner.Point + rightNudge
-                });
-
-                normals.AddRange(new List<Vector3>
-                {
-                    upperCorner.Normal,
-                    upperCorner.Normal,
-                    lowerCorner.Normal,
-                    lowerCorner.Normal,
-                });
-
-                triangles.AddRange(new List<int>
-                {
-                    vertices.Count - 4, vertices.Count - 3, vertices.Count - 2, // upLeft, upRight, lowLeft
-                    vertices.Count - 2, vertices.Count - 3, vertices.Count - 1, // lowLeft, upRight, lowRight
-                });
-
-                colors.AddRange(new List<Color> { Color.blue, Color.blue, Color.blue, Color.blue });
-            }
-
             // Instantiating things
             var go = new GameObject("Island");
             var rend = go.AddComponent<MeshRenderer>();
-            rend.material.shader = Resources.Load<Shader>("VertexColor");
+            rend.material = Resources.Load<Material>("UnityVC/VertexTerrain");
             var mesh = new Mesh { name = "HexMesh" };
             var mcomp = go.AddComponent<MeshFilter>();
             mcomp.mesh = mesh;
@@ -158,7 +117,7 @@ namespace Assets.Helpers
                 foreach (var a in c.Adjacents.Where(x => !x.Props.Has(ObjectProp.Water) && !x.Props.Has(ObjectProp.Shore)))
                 {
                     var newElevation = (float)(!a.Props.Has(ObjectProp.Water)
-                        ? c.Point.y * 1.07 + 1
+                        ? c.Point.y * 1.1 + Vector3.Distance(c.Point, a.Point) / 25
                         : c.Point.y);
 
                     if (newElevation < a.Point.y)
@@ -171,17 +130,6 @@ namespace Assets.Helpers
                 }
             }
 
-            foreach (var center in map.Centers.Values)
-            {
-                foreach (var corner in center.Corners)
-                {
-                    corner.Point = new Vector3(
-                        corner.Point.x, 
-                        (corner.Point.y / mapMaxHeight) * 20, 
-                        corner.Point.z);
-                }
-            }
-            
             foreach (var corner in map.Corners.Values)
             {
                 var sum = Vector3.zero;
@@ -225,7 +173,7 @@ namespace Assets.Helpers
 
         public static void GenerateRivers(this Map map)
         {
-            var riverCount = Random.Range(2, 4);
+            var riverCount = Random.Range(5, 10);
 
             for (int i = 0; i < riverCount; i++)
             {
@@ -238,7 +186,7 @@ namespace Assets.Helpers
                 }
                 while (!randomCorner.Props.Has(ObjectProp.Land) || randomCorner.Props.Has(ObjectProp.Shore));
 
-                GameObject.CreatePrimitive(PrimitiveType.Sphere).transform.position = randomCorner.Point;
+                //GameObject.CreatePrimitive(PrimitiveType.Sphere).transform.position = randomCorner.Point;
 
                 // Percolate down until a shore is found
                 for (Corner c = randomCorner, minAdj; !c.IsShore(); c = minAdj)
@@ -247,9 +195,63 @@ namespace Assets.Helpers
                     minAdj = c.Adjacents.Aggregate((curMin, x) => x.Point.y < curMin.Point.y ? x : curMin);
 
                     var riverEdge = map.Edges[(c.Point + minAdj.Point).ToVector3xz() / 2f];
+                    
                     riverEdge.Props.Add(ObjectProp.River);
-                    riverEdge.Flow += 1f;
+                    riverEdge.DelaunayStart.Props.Add(ObjectProp.River);
+                    riverEdge.DelaunayEnd.Props.Add(ObjectProp.River);
+                    riverEdge.VoronoiStart.Props.Add(ObjectProp.River);
+                    riverEdge.VoronoiEnd.Props.Add(ObjectProp.River);
+
+                    riverEdge.VoronoiStart.Flow += 1f;
+                    riverEdge.VoronoiEnd.Flow += 1f;
                 }
+            }
+        }
+
+        public static void GenerateMoisture(this Map map)
+        {
+            var queue = new Queue<Corner>();
+            foreach (Corner q in map.Corners.Values.Where(q => 
+                q.Props.Has(ObjectProp.Shore) || 
+                q.Props.Has(ObjectProp.Water) ||
+                q.Props.Has(ObjectProp.River)))
+            {
+
+                q.Moisture = (float) (q.Props.Has(ObjectProp.Shore) || q.Props.Has(ObjectProp.Water)
+                    ? 0.5f
+                    : (q.Flow > 0 ? Math.Max(1.0, (0.4 * q.Flow)) : 0.1));
+                queue.Enqueue(q);
+            }
+
+            while (queue.Any())
+            {
+                var q = queue.Dequeue();
+
+                foreach (Corner r in q.Adjacents.Where(x => x.Props.Has(ObjectProp.Land)))
+                {
+                    var newMoisture = q.Moisture * 
+                        0.90f;
+                    if (newMoisture > r.Moisture)
+                    {
+                        r.Moisture = newMoisture;
+                        queue.Enqueue(r);
+                    }
+                }
+            }
+
+            foreach (var center in map.Centers.Values)
+            {
+                var sum = center.Corners.Sum(x => x.Moisture);
+                center.Moisture = sum / center.Corners.Count;
+            }
+        }
+
+        public static void GenerateBiome(this Map map)
+        {
+            foreach (var center in map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Land)))
+            {
+                var bio = BiomeTypes.BiomeSelector(center.Props, 5000, center.Point.y, center.Moisture);
+                center.Biome = bio;
             }
         }
         #endregion
