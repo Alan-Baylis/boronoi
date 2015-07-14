@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Assets.Scripts;
+using LibNoise.Generator;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
@@ -58,7 +59,7 @@ namespace Assets.Helpers
                 }
 
                 var lastVertex = 0;
-                var color = center.Biome.Color;
+                var color = center.Biome != null ? center.Biome.Color : Color.green;
                 //center color
                 colors.Add(color);
 
@@ -96,6 +97,10 @@ namespace Assets.Helpers
 
         public static void GenerateElevation(this Map map)
         {
+            //var perlin = new Perlin();
+            //perlin.OctaveCount = 1;
+            //perlin.Frequency = 3;
+            //perlin.Lacunarity = 2;
             var lands = new Queue<Corner>();
 
             foreach (var corner in map.Corners.Values)
@@ -104,13 +109,20 @@ namespace Assets.Helpers
                 {
                     lands.Enqueue(corner);
                 }
-                else
+                else if (corner.Props.Has(ObjectProp.Land))
                 {
-                    corner.Point = new Vector3(corner.Point.x, 999, corner.Point.z);
+                    //if (Random.Range(0f, 1f) > 0.97)
+                    //{
+                    //    corner.Point = new Vector3(corner.Point.x, (float)(perlin.GetValue(corner.Point) + 1) * 20, corner.Point.z);
+                    //    lands.Enqueue(corner);
+                    //}
+                    //else
+                    //{
+                        corner.Point = new Vector3(corner.Point.x, 999, corner.Point.z);    
+                    //}
                 }
             }
             
-            var mapMaxHeight = 0f;
             while (lands.Any())
             {
                 var c = lands.Dequeue();
@@ -123,8 +135,6 @@ namespace Assets.Helpers
                     if (newElevation < a.Point.y)
                     {
                         a.Point = new Vector3(a.Point.x, (float)newElevation, a.Point.z);
-                        if (newElevation > mapMaxHeight)
-                            mapMaxHeight = newElevation;
                         lands.Enqueue(a);
                     }
                 }
@@ -193,6 +203,8 @@ namespace Assets.Helpers
                 {
                     // Find min among adjecents
                     minAdj = c.Adjacents.Aggregate((curMin, x) => x.Point.y < curMin.Point.y ? x : curMin);
+                    if (minAdj.Point.y > c.Point.y)
+                        break;
 
                     var riverEdge = map.Edges[(c.Point + minAdj.Point).ToVector3xz() / 2f];
                     

@@ -14,7 +14,7 @@ using Random = UnityEngine.Random;
 
 namespace Assets
 {
-    [ExecuteInEditMode]
+    
     public class World : MonoBehaviour
     {
         public int Seed = 4;
@@ -30,6 +30,7 @@ namespace Assets
             Build();
         }
 
+        [ExecuteInEditMode]
         public void Build()
         {
             var v = GetVoronoi(Width, Height, Seed, SmoothingFactor);
