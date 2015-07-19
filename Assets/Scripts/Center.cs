@@ -25,5 +25,13 @@ namespace Assets.Scripts
             Corners = new HashSet<Corner>(new CornerComparer());
             Props.Add(ObjectProp.Water);
         }
+
+        public override string ToString()
+        {
+            return "Center: " + Point + "\n" +
+                   "Corners/Edges/Neigh: " + Corners.Count + "/" + Borders.Count + "/" + Neighbours.Count  + "\n" +
+                   "Moisture: " + Moisture + "\n" +
+                   "Biome: " + Biome.Name + "\n";
+        }
     }
 }

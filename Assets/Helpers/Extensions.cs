@@ -37,7 +37,7 @@ namespace Assets.Helpers
         #endregion
 
         #region Map
-        public static void CreateMesh(this Map map)
+        public static GameObject CreateDiscreteMesh(this Map map)
         {
             var vertices = new List<Vector3>();
             var colors = new List<Color>();
@@ -93,6 +93,79 @@ namespace Assets.Helpers
             mesh.triangles = triangles.ToArray();
             mesh.colors = colors.ToArray();
             mesh.normals = normals.ToArray();
+
+            go.AddComponent<MeshCollider>();
+            return go;
+        }
+
+        public static GameObject CreateContinuousMesh(this Map map)
+        {
+            var vertices = new List<Vector3>();
+            var colors = new List<Color>();
+            var triangles = new List<int>();
+            var normals = new List<Vector3>();
+            var uvs = new List<Vector2>();
+
+            var vertdic = new Dictionary<Vector3, int>();
+
+            foreach (var center in map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Land) || x.Props.Has(ObjectProp.ShallowWater)))
+            {
+                //fuck this
+                center.OrderCorners();
+                
+                var vertindexes = new List<int>();
+                vertindexes.Add(vertices.Count);
+                vertices.Add(center.Point);
+                normals.Add(center.Normal);
+                uvs.Add(new Vector2(center.Point.x, center.Point.z));
+
+                var color = center.Biome != null ? center.Biome.Color : Color.green;
+                colors.Add(color);
+
+                foreach (var corner in center.Corners)
+                {
+                    if (!vertdic.ContainsKey(corner.Point))
+                    {
+                        vertdic.Add(corner.Point, vertices.Count);
+                        vertindexes.Add(vertices.Count);
+                        vertices.Add(corner.Point);
+                        normals.Add(corner.Normal);
+                        uvs.Add(new Vector2(corner.Point.x, corner.Point.z));
+                        colors.Add(color);
+                    }
+                    else
+                    {
+                        vertindexes.Add(vertdic[corner.Point]);
+                    }
+                }
+
+                for (int i = 0; i < vertindexes.Count - 1; i++)
+                {
+                    triangles.Add(vertindexes[0]);
+                    triangles.Add(vertindexes[i+1]);
+                    triangles.Add(vertindexes[i]);
+                }
+
+                triangles.Add(vertindexes[0]);
+                triangles.Add(vertindexes[1]);
+                triangles.Add(vertindexes[vertindexes.Count - 1]);
+            }
+
+            // Instantiating things
+            var go = new GameObject("Island");
+            var rend = go.AddComponent<MeshRenderer>();
+            rend.material = Resources.Load<Material>("UnityVC/VertexTerrain");
+            var mesh = new Mesh { name = "HexMesh" };
+            var mcomp = go.AddComponent<MeshFilter>();
+            mcomp.mesh = mesh;
+            mesh.vertices = vertices.ToArray();
+            mesh.triangles = triangles.ToArray();
+            mesh.colors = colors.ToArray();
+            mesh.normals = normals.ToArray();
+            mesh.uv = uvs.ToArray();
+
+            go.AddComponent<MeshCollider>();
+            return go;
         }
 
         public static void GenerateElevation(this Map map)
@@ -102,12 +175,14 @@ namespace Assets.Helpers
             //perlin.Frequency = 3;
             //perlin.Lacunarity = 2;
             var lands = new Queue<Corner>();
+            var oceans = new Queue<Corner>();
 
             foreach (var corner in map.Corners.Values)
             {
                 if (corner.Props.Has(ObjectProp.Shore))
                 {
                     lands.Enqueue(corner);
+                    oceans.Enqueue(corner);
                 }
                 else if (corner.Props.Has(ObjectProp.Land))
                 {
@@ -122,7 +197,8 @@ namespace Assets.Helpers
                     //}
                 }
             }
-            
+
+            var mapMax = 0f;
             while (lands.Any())
             {
                 var c = lands.Dequeue();
@@ -134,11 +210,21 @@ namespace Assets.Helpers
 
                     if (newElevation < a.Point.y)
                     {
+                        if (newElevation > mapMax)
+                            mapMax = newElevation;
                         a.Point = new Vector3(a.Point.x, (float)newElevation, a.Point.z);
                         lands.Enqueue(a);
                     }
                 }
             }
+
+            //foreach (var c in map.Corners.Values)
+            //{
+            //    c.Point = new Vector3(
+            //        c.Point.x, 
+            //        c.Point.y / mapMax * 500,
+            //        c.Point.z);
+            //}
 
             foreach (var corner in map.Corners.Values)
             {
@@ -262,7 +348,7 @@ namespace Assets.Helpers
         {
             foreach (var center in map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Land)))
             {
-                var bio = BiomeTypes.BiomeSelector(center.Props, 5000, center.Point.y, center.Moisture);
+                var bio = BiomeTypes.BiomeSelector(center.Props, 1000, center.Point.y, center.Moisture);
                 center.Biome = bio;
             }
         }

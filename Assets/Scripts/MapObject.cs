@@ -4,10 +4,11 @@
 public enum ObjectProp
 {
     Water = 1,
-    Land = 2,
-    ShallowWater = 4,
-    Shore = 8,
-    River = 16
+    Ocean = 2,
+    Land = 4,
+    ShallowWater = 8,
+    Shore = 16,
+    River = 32
 }
 
 public class MapObjectState

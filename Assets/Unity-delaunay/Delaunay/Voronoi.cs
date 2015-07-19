@@ -226,6 +226,7 @@ namespace Delaunay
 			return _sites.SiteCoords ();
 		}
 
+        public Site BottomMostSite { get { return fortunesAlgorithm_bottomMostSite; } }
 		private Site fortunesAlgorithm_bottomMostSite;
 		private void FortunesAlgorithm ()
 		{
