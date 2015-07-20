@@ -28,6 +28,7 @@ namespace Assets
         private Map _map;
         public Terrain Terrain;
         public KDTree<Center> _kd;
+        private Texture2D _text;
 
         void Awake()
         {
@@ -37,6 +38,7 @@ namespace Assets
         [ExecuteInEditMode]
         public void Build()
         {
+            _text = Resources.Load<Texture2D>("island");
             _kd = new KDTree<Center>(2);
             var v = GetVoronoi(Width, Height, Seed, SmoothingFactor);
             _map = CreateDataStructure(v, _kd);
@@ -191,7 +193,13 @@ namespace Assets
 
         private bool InLand(Vector3 p, int w, int h, int s)
         {
-            return IsLandShape(new Vector3((float) (2*(p.x/w - 0.5)), 0, (float) (2*(p.z/h - 0.5))), s);
+            //return IsLandShape(new Vector3((float) (2*(p.x/w - 0.5)), 0, (float) (2*(p.z/h - 0.5))), s);
+            if (p.x < 0 || p.x > w || p.z < 0 || p.z > h)
+                return false;
+
+            if (_text.GetPixel((int)((p.x / 10000) * 1024), (int)((p.z / 10000) * 1024)).r > 0)
+                return true;
+            return false;
         }
 
         private bool IsLandShape(Vector3 v, int seed)
