@@ -1,4 +1,5 @@
 ﻿using Assets;
+using Assets.Scripts.Managers;
 using UnityEngine;
 using System.Collections;
 using UnityEditor;
@@ -14,6 +15,21 @@ public class WorldEditor : Editor
         if (GUILayout.Button("Build island"))
         {
             world.Build();
+        }
+    }
+}
+
+[CustomEditor(typeof(TurboForest))]
+public class TurboForestEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+
+        var world = (TurboForest)target;
+        if (GUILayout.Button("Generate Forest"))
+        {
+            world.GenerateForest();
         }
     }
 }
