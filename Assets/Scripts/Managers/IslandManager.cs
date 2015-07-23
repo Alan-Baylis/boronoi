@@ -127,5 +127,10 @@ namespace Assets.Scripts.Managers
             }
             
         }
+
+        public KDTree<Center> GetKdTree()
+        {
+            return _kd;
+        }
     }
 }

@@ -60,9 +60,25 @@ namespace Assets
                         c.Props.Add(ObjectProp.Land);
                         c.Props.Remove(ObjectProp.Water);
                     }
+
+                    _kd.AddPoint(new double[] { tup.Key.x, tup.Key.z }, tup.Value);
                 }
-                _kd.AddPoint(new[] { (double)tup.Key.x, (double)tup.Key.z }, tup.Value);
             }
+
+            var torem = new List<Center>();
+            foreach (var center in _map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Water)))
+            {
+                foreach (var b in center.Borders.Where(x => x.VoronoiStart.Props.Has(ObjectProp.Water) && x.VoronoiEnd.Props.Has(ObjectProp.Water)))
+                {
+                    _map.Edges.Remove(b.Midpoint);
+                }
+                foreach (var c in center.Corners.Where(x => x.Props.Has(ObjectProp.Water)))
+                {
+                    _map.Corners.Remove(c.Point);
+                }
+                torem.Add(center);
+            }
+            torem.ForEach(x => _map.Centers.Remove(x.Point));
             
             foreach (var edge in _map.Edges.Values)
             {
@@ -193,13 +209,13 @@ namespace Assets
 
         private bool InLand(Vector3 p, int w, int h, int s)
         {
-            //return IsLandShape(new Vector3((float) (2*(p.x/w - 0.5)), 0, (float) (2*(p.z/h - 0.5))), s);
-            if (p.x < 0 || p.x > w || p.z < 0 || p.z > h)
-                return false;
+            return IsLandShape(new Vector3((float) (2*(p.x/w - 0.5)), 0, (float) (2*(p.z/h - 0.5))), s);
+            //if (p.x < 0 || p.x > w || p.z < 0 || p.z > h)
+            //    return false;
 
-            if (_text.GetPixel((int)((p.x / 10000) * 1024), (int)((p.z / 10000) * 1024)).r > 0)
-                return true;
-            return false;
+            //if (_text.GetPixel((int)((p.x / 10000) * 1024), (int)((p.z / 10000) * 1024)).r > 0)
+            //    return true;
+            //return false;
         }
 
         private bool IsLandShape(Vector3 v, int seed)

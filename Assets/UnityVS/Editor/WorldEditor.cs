@@ -27,9 +27,10 @@ public class TurboForestEditor : Editor
         DrawDefaultInspector();
 
         var world = (TurboForest)target;
+        var im = world.GetComponent<IslandManager>();
         if (GUILayout.Button("Generate Forest"))
         {
-            world.GenerateForest();
+            world.GenerateForest(im.GetKdTree());
         }
     }
 }

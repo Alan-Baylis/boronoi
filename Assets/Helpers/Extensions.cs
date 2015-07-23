@@ -108,7 +108,7 @@ namespace Assets.Helpers
 
             var vertdic = new Dictionary<Vector3, int>();
 
-            foreach (var center in map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Land) || x.Props.Has(ObjectProp.ShallowWater)))
+            foreach (var center in map.Centers.Values)
             {
                 //fuck this
                 center.OrderCorners();

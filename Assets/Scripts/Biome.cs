@@ -46,11 +46,11 @@ namespace Assets.Scripts
         public static Biome ShallowWater = new Biome("ShallowWater", "ffffff");
         public static Biome Ice = new Biome("Ice", "ffffff");
         public static Biome Lake = new Biome("Lake", "ffffff");
-        public static Biome Beach = new Biome("Beach", "000000", 0);
+        
         public static Biome Snow = new Biome("Snow", "ffffff");
         public static Biome Tundra = new Biome("Tundra", "ffffff"); //"c4ccbb"
         public static Biome Bare = new Biome("Beach", "ffffff");
-        public static Biome Scorched = new Biome("Beach", "ffffff", 1);
+        
         public static Biome Marsh = new Biome("Marsh", "ffffff");
         public static Biome Cliff = new Biome("Cliff", "ffffff");
         public static Biome Taiga = new Biome("Taiga", "ffffff"); //"ccd4bb"
@@ -58,11 +58,17 @@ namespace Assets.Scripts
         public static Biome TemperateDesert = new Biome("TemperateDesert", "ffffff");
         public static Biome TemperateRainForest = new Biome("TemperateRainForest", "ffffff"); //"a4c4a8"
         public static Biome TemperateDeciduousForest = new Biome("TemperateDeciduousForest", "ffffff"); //"b4c9a9"
-        public static Biome Grassland = new Biome("Grassland", "ff0000", 0);
+        
         public static Biome SubtropicalDesert = new Biome("SubtropicalDesert", "ffffff");
-        public static Biome TropicalRainForest = new Biome("TropicalRainForest", "ffffff", 0); //"9cbba9"
-        public static Biome TropicalSeasonalForest = new Biome("TropicalSeasonalForest", "ffff00", 0); //"558b70"
+        
+        
 
+        public static Biome Beach = new Biome("Beach", "000000", 0);
+        public static Biome Grassland = new Biome("Grassland", "ff0000", 0);
+        public static Biome TropicalSeasonalForest = new Biome("TropicalSeasonalForest", "ffff00", 0); //"558b70"
+        public static Biome TropicalRainForest = new Biome("TropicalRainForest", "ffffff", 0); //"9cbba9"
+        public static Biome Scorched = new Biome("Beach", "ffffff", 1);
+        
 
         //public static Biome Ocean = new Biome("Ocean", "363661");
         //public static Biome ShallowWater = new Biome("ShallowWater", "364671");

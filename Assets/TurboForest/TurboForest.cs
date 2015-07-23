@@ -1,6 +1,8 @@
-﻿using UnityEngine;
+﻿using Assets.Scripts;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using KDTree;
 
 public class tfQuad // store each tree before generate batch mesh
 {
@@ -41,10 +43,14 @@ public class TurboForest : MonoBehaviour
 	Vector2 uv1=new Vector2(frameSize,0);
 	Vector2 uv2=new Vector2(frameSize,frameSize);
 	Vector2 uv3=new Vector2(0,frameSize);
-	
+
+    public string BiomeName;
+    public int Type;
+    private KDTree<Center> _kdtree;
+    
+
 	void Start () 
 	{
-
 		if(this.GetComponent<Collider>()==null)
 		{
 			Debug.Log("ERR! object: "+this.name+" require collider to generate TurboForest");
@@ -56,13 +62,28 @@ public class TurboForest : MonoBehaviour
 		qv2*=eachTreeBaseSize;
 		qv3*=eachTreeBaseSize;
 
-		GenerateTurboForest();
+        GenerateTurboForest(BiomeName, Type);
 	}
 
     [ExecuteInEditMode]
-    public void GenerateForest()
+    public void GenerateForest(KDTree<Center> kd)
     {
-        Start();
+        _kdtree = kd;
+
+        if (this.GetComponent<Collider>() == null)
+        {
+            Debug.Log("ERR! object: " + this.name + " require collider to generate TurboForest");
+            return;
+        }
+
+        qv0 *= eachTreeBaseSize;
+        qv1 *= eachTreeBaseSize;
+        qv2 *= eachTreeBaseSize;
+        qv3 *= eachTreeBaseSize;
+
+        GenerateTurboForest("TropicalSeasonalForest", 1);
+        GenerateTurboForest("TropicalRainForest", 2);
+        GenerateTurboForest("Grassland", 4);
     }
 
 	int Clamp(int v,int size)
@@ -72,7 +93,7 @@ public class TurboForest : MonoBehaviour
 		return v;
 	}
 
-	void GenerateTurboForest()
+	void GenerateTurboForest(string biome, int type)
 	{
 
 		tfQuad.quads.Clear();
@@ -86,8 +107,8 @@ public class TurboForest : MonoBehaviour
 		RaycastHit info;
 
 		// forest area from collider
-		Vector3 cmin=GetComponent<Collider>().bounds.min;
-		Vector3 cmax=GetComponent<Collider>().bounds.max;
+	    Vector3 cmin = GetComponent<Collider>().bounds.min;
+	    Vector3 cmax = GetComponent<Collider>().bounds.max;
 
 		int total=treesCount;
 
@@ -111,7 +132,8 @@ public class TurboForest : MonoBehaviour
 			if(this.GetComponent<Collider>().Raycast(ray,out info,castDistance))
 			{
 				height[i,j]=1;
-				if(Random.value<.3f) height[i,j]=Random.value*.5f;
+				if(Random.value<.3f) 
+                    height[i,j]=Random.value*.5f;
 			}
 		}
 
@@ -149,40 +171,37 @@ public class TurboForest : MonoBehaviour
 
 				ray.origin=tpos;
 
-				if(this.GetComponent<Collider>().Raycast(ray,out info,castDistance)) // if tree on mesh
-				{
 
-					tfQuad q=new tfQuad(tpos.x,info.point.y,tpos.z);
+			    var c = _kdtree.NearestNeighbors(new double[] {tpos.x, tpos.z}, 1);
+			    c.MoveNext();
+			    var center = c.Current;
+				//if() // if tree on mesh
+                if (center.Biome != null && center.Biome.Name.ToLowerInvariant().Contains(biome.ToLowerInvariant()) && 
+                    GetComponent<Collider>().Raycast(ray, out info, castDistance))
+				{
+					var q= new tfQuad(tpos.x,info.point.y,tpos.z);
 					q.scale=height[i,j]*(1.0f-eachTreeSizeRandomize+Random.value*eachTreeSizeRandomize*2);
 					total--;
 
 					if(tfQuad.quads.Count==10666) // max quads per mesh (42 664 indices)
 					{
-						BuildMesh();
+						BuildMesh(type);
 						tfQuad.quads.Clear(); // clear quads list for next mesh
 						System.GC.Collect();
 					}
-
-
-
-
 				}
 			}
-
-
-
 		}
 
 		if(tfQuad.quads.Count>0)
 		{
-			BuildMesh();
+			BuildMesh(type);
 			tfQuad.quads.Clear(); // clear quads list for next mesh
 			System.GC.Collect();
 		}
-
 	}
 
-	void BuildMesh()
+	void BuildMesh(int deftype)
 	{
 
 		if(tfQuad.quads.Count==0) return;
@@ -259,7 +278,8 @@ public class TurboForest : MonoBehaviour
 			if(r>.25f) type=1;
 			if(r>.5f) type=2;
 			if(r>.75f) type=3;
-			
+
+            type = deftype;
 			if(type==1) typeShift.x=.5f;
 			else if(type==2) typeShift.y=.5f;
 			else if(type==3) {typeShift.x=.5f;typeShift.y=.5f;}
@@ -272,8 +292,8 @@ public class TurboForest : MonoBehaviour
 		}
 
 		// creating mesh
-		GameObject trees=new GameObject();
-		MeshFilter mf=trees.AddComponent<MeshFilter>();
+		var trees=new GameObject();
+		var mf=trees.AddComponent<MeshFilter>();
 		
 		mf.sharedMesh=new Mesh();
 		
