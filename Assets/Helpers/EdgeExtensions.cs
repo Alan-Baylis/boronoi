@@ -15,5 +15,10 @@ namespace Assets.Helpers
                    (edge.DelaunayEnd.Props.Has(ObjectProp.Water) &&
                     edge.DelaunayStart.Props.Has(ObjectProp.Land));
         }
+
+        public static Corner OtherCorner(this Edge edge, Corner c)
+        {
+            return edge.VoronoiStart == c ? edge.VoronoiEnd : edge.VoronoiStart;
+        }
     }
 }

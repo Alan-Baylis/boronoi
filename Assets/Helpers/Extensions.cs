@@ -52,7 +52,7 @@ namespace Assets.Helpers
                 var startingIndex = vertices.Count;
                 vertices.Add(center.Point);
                 normals.Add(center.Normal);
-                foreach (var corner in center.Corners)
+                foreach (var corner in center.Corners.Values)
                 {
                     vertices.Add(corner.Point);
                     normals.Add(corner.Normal);
@@ -122,7 +122,7 @@ namespace Assets.Helpers
                 var color = center.Biome != null ? center.Biome.Color : Color.green;
                 colors.Add(color);
 
-                foreach (var corner in center.Corners)
+                foreach (var corner in center.Corners.Values)
                 {
                     if (!vertdic.ContainsKey(corner.Point))
                     {
@@ -202,7 +202,7 @@ namespace Assets.Helpers
             while (lands.Any())
             {
                 var c = lands.Dequeue();
-                foreach (var a in c.Adjacents.Where(x => !x.Props.Has(ObjectProp.Water) && !x.Props.Has(ObjectProp.Shore)))
+                foreach (var a in c.Adjacents.Values.Where(x => !x.Props.Has(ObjectProp.Water) && !x.Props.Has(ObjectProp.Shore)))
                 {
                     var newElevation = (float)(!a.Props.Has(ObjectProp.Water)
                         ? c.Point.y * 1.1 + Vector3.Distance(c.Point, a.Point) / 25
@@ -230,11 +230,11 @@ namespace Assets.Helpers
             {
                 var sum = Vector3.zero;
                 var count = 0;
-                foreach (var ce in corner.Touches)
+                foreach (var ce in corner.Touches.Values)
                 {
-                    foreach (var c in ce.Corners)
+                    foreach (var c in ce.Corners.Values)
                     {
-                        if (corner.Adjacents.Contains(c))
+                        if (corner.Adjacents.ContainsKey(c.Point))
                         {
                             if (ce.Point.Area(corner.Point, c.Point) < 0)
                             {
@@ -254,11 +254,11 @@ namespace Assets.Helpers
 
             foreach (var center in map.Centers.Values)
             {
-                center.Point = new Vector3(center.Point.x, center.Corners.Sum(x => x.Point.y) / center.Corners.Count, center.Point.z);
+                center.Point = new Vector3(center.Point.x, center.Corners.Values.Sum(x => x.Point.y) / center.Corners.Count, center.Point.z);
 
                 //TODO really need an vector3 average function
                 var sum = Vector3.zero;
-                foreach (var corner in center.Corners)
+                foreach (var corner in center.Corners.Values)
                 {
                     sum += corner.Normal;
                 }
@@ -267,7 +267,7 @@ namespace Assets.Helpers
             }
         }
 
-        public static void GenerateRivers(this Map map)
+        public static void GenerateRivers(this Map map, DataFactory factory)
         {
             var riverCount = Random.Range(5, 10);
 
@@ -276,6 +276,7 @@ namespace Assets.Helpers
                 // Select a random non-shore corner
                 // TODO ATIL: Can be selected a little further inland
                 Corner randomCorner;
+                var rivers = new List<Edge>();
                 do
                 {
                     randomCorner = map.Corners.Values.ElementAt(Random.Range(0, map.Corners.Count));
@@ -288,12 +289,15 @@ namespace Assets.Helpers
                 for (Corner c = randomCorner, minAdj; !c.IsShore(); c = minAdj)
                 {
                     // Find min among adjecents
-                    minAdj = c.Adjacents.Aggregate((curMin, x) => x.Point.y < curMin.Point.y ? x : curMin);
+                    minAdj = c.Adjacents.Values.Aggregate((curMin, x) => x.Point.y < curMin.Point.y ? x : curMin);
                     if (minAdj.Point.y > c.Point.y)
                         break;
-
-                    var riverEdge = map.Edges[(c.Point + minAdj.Point).ToVector3xz() / 2f];
                     
+                    c.LowestNeighbour = minAdj.Point;
+                    minAdj.HighestNeighbour = c.Point;
+
+                    var riverEdge = map.Edges[(c.Point + minAdj.Point) / 2f];
+                    rivers.Add(riverEdge);
                     riverEdge.Props.Add(ObjectProp.River);
                     riverEdge.DelaunayStart.Props.Add(ObjectProp.River);
                     riverEdge.DelaunayEnd.Props.Add(ObjectProp.River);
@@ -302,6 +306,12 @@ namespace Assets.Helpers
 
                     riverEdge.VoronoiStart.Flow += 1f;
                     riverEdge.VoronoiEnd.Flow += 1f;
+                }
+
+                foreach (var river in rivers)
+                {
+                    river.DelaunayStart.PushEdge(river, factory);
+                    river.DelaunayEnd.PushEdge(river, factory);
                 }
             }
         }
@@ -325,7 +335,7 @@ namespace Assets.Helpers
             {
                 var q = queue.Dequeue();
 
-                foreach (Corner r in q.Adjacents.Where(x => x.Props.Has(ObjectProp.Land)))
+                foreach (Corner r in q.Adjacents.Values.Where(x => x.Props.Has(ObjectProp.Land)))
                 {
                     var newMoisture = q.Moisture * 
                         0.90f;
@@ -339,7 +349,7 @@ namespace Assets.Helpers
 
             foreach (var center in map.Centers.Values)
             {
-                var sum = center.Corners.Sum(x => x.Moisture);
+                var sum = center.Corners.Values.Sum(x => x.Moisture);
                 center.Moisture = sum / center.Corners.Count;
             }
         }

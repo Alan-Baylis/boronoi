@@ -9,20 +9,23 @@ namespace Assets.Scripts
     {
         public Vector3 Point { get; set; }
 
-        public HashSet<Center> Touches { get; set; }
-        public HashSet<Edge> Protrudes { get; set; }
-        public HashSet<Corner> Adjacents { get; set; }
+        public Dictionary<Vector3, Center> Touches { get; set; }
+        public Dictionary<Vector3, Edge> Protrudes { get; set; }
+        public Dictionary<Vector3, Corner> Adjacents { get; set; }
 
         public Vector3 Normal { get; set; }
         public float Flow { get; set; }
         public float Moisture { get; set; }
 
+        public Vector3 HighestNeighbour { get; set; }
+        public Vector3 LowestNeighbour { get; set; }
+
         public Corner(Vector3 p)
         {
             Point = p;
-            Touches = new HashSet<Center>(new CenterComparer());
-            Protrudes = new HashSet<Edge>(new EdgeComparer());
-            Adjacents = new HashSet<Corner>(new CornerComparer());
+            Touches = new Dictionary<Vector3, Center>(new Vector3Comparer());
+            Protrudes = new Dictionary<Vector3, Edge>(new Vector3Comparer());
+            Adjacents = new Dictionary<Vector3, Corner>(new Vector3Comparer());
             Props.Add(ObjectProp.Water);
         }
     }

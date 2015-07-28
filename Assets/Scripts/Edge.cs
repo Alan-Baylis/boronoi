@@ -8,14 +8,12 @@ namespace Assets.Scripts
     {
         public int Index { get; set; }
         public Vector3 Midpoint { get; private set; }
-        public Center DelaunayStart { get; private set; }
-        public Center DelaunayEnd { get; private set; }// Delaunay edge
-        public Corner VoronoiStart { get; private set; }
-        public Corner VoronoiEnd { get; private set; }// Voronoi edge
+        public Center DelaunayStart { get; set; }
+        public Center DelaunayEnd { get; set; }// Delaunay edge
+        public Corner VoronoiStart { get; set; }
+        public Corner VoronoiEnd { get; set; }// Voronoi edge
         public Corner[] Corners { get { return new[] { VoronoiStart, VoronoiEnd }; } }
-
         
-
         public Edge(Corner begin, Corner end, Center left, Center right)
         {
             VoronoiStart = begin;

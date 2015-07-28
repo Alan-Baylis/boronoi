@@ -9,9 +9,9 @@ namespace Assets.Scripts
     {
         public Vector3 Point { get; set; }  
 
-        public HashSet<Center> Neighbours { get; set; }
-        public HashSet<Edge> Borders { get; set; }
-        public HashSet<Corner> Corners { get; set; }
+        public Dictionary<Vector3, Center> Neighbours { get; set; }
+        public Dictionary<Vector3, Edge> Borders { get; set; }
+        public Dictionary<Vector3, Corner> Corners { get; set; }
 
         public Vector3 Normal { get; set; }
         public float Moisture { get; set; }
@@ -20,9 +20,9 @@ namespace Assets.Scripts
         public Center(Vector3 p)
         {
             Point = p;
-            Neighbours = new HashSet<Center>(new CenterComparer());
-            Borders = new HashSet<Edge>(new EdgeComparer());
-            Corners = new HashSet<Corner>(new CornerComparer());
+            Neighbours = new Dictionary<Vector3, Center>(new Vector3Comparer());
+            Borders = new Dictionary<Vector3, Edge>(new Vector3Comparer());
+            Corners = new Dictionary<Vector3, Corner>(new Vector3Comparer());
             Props.Add(ObjectProp.Water);
         }
 

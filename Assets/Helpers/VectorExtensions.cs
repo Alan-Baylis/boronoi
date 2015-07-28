@@ -8,6 +8,11 @@ namespace Assets.Helpers
 {
     public static class VectorExtensions
     {
+        public static Vector2 ToVector2xz(this Vector3 v)
+        {
+            return new Vector3(v.x, v.z);
+        }
+
         public static Vector3 ToVector3xz(this Vector2 v)
         {
             return new Vector3(v.x, 0, v.y);

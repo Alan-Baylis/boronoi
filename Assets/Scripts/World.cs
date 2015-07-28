@@ -50,12 +50,12 @@ namespace Assets
                     var center = tup.Value;
                     center.Props.Add(ObjectProp.Land);
                     center.Props.Remove(ObjectProp.Water);
-                    foreach (var c in center.Corners)
+                    foreach (var c in center.Corners.Values)
                     {
                         c.Props.Add(ObjectProp.Land);
                         c.Props.Remove(ObjectProp.Water);
                     }
-                    foreach (var c in center.Borders)
+                    foreach (var c in center.Borders.Values)
                     {
                         c.Props.Add(ObjectProp.Land);
                         c.Props.Remove(ObjectProp.Water);
@@ -68,11 +68,11 @@ namespace Assets
             var torem = new List<Center>();
             foreach (var center in _map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Water)))
             {
-                foreach (var b in center.Borders.Where(x => x.VoronoiStart.Props.Has(ObjectProp.Water) && x.VoronoiEnd.Props.Has(ObjectProp.Water)))
+                foreach (var b in center.Borders.Values.Where(x => x.VoronoiStart.Props.Has(ObjectProp.Water) && x.VoronoiEnd.Props.Has(ObjectProp.Water)))
                 {
                     _map.Edges.Remove(b.Midpoint);
                 }
-                foreach (var c in center.Corners.Where(x => x.Props.Has(ObjectProp.Water)))
+                foreach (var c in center.Corners.Values.Where(x => x.Props.Has(ObjectProp.Water)))
                 {
                     _map.Corners.Remove(c.Point);
                 }
@@ -95,7 +95,7 @@ namespace Assets
             }
 
             _map.GenerateElevation();
-            _map.GenerateRivers();
+            _map.GenerateRivers(_factory);
             _map.GenerateMoisture();
             _map.GenerateBiome();
             //var go = _map.CreateDiscreteMesh();
@@ -264,47 +264,51 @@ namespace Assets
 
             foreach (var edge in map.Edges.Values)
             {
-                edge.VoronoiStart.Protrudes.Add(edge);
-                edge.VoronoiEnd.Protrudes.Add(edge);
-                edge.DelaunayStart.Borders.Add(edge);
-                edge.DelaunayEnd.Borders.Add(edge);
+                edge.VoronoiStart.Protrudes.Add(edge.Midpoint, edge);
+                edge.VoronoiEnd.Protrudes.Add(edge.Midpoint, edge);
+                edge.DelaunayStart.Borders.Add(edge.Midpoint, edge);
+                edge.DelaunayEnd.Borders.Add(edge.Midpoint, edge);
             }
 
             foreach (var corner in map.Corners.Values)
             {
-                foreach (var edge in corner.Protrudes)
+                foreach (var edge in corner.Protrudes.Values)
                 {
                     if (edge.VoronoiStart != corner)
                     {
-                        corner.Adjacents.Add(edge.VoronoiStart);
+                        corner.Adjacents.Add(edge.VoronoiStart.Point, edge.VoronoiStart);
                     }
                     if (edge.VoronoiEnd != corner)
                     {
-                        corner.Adjacents.Add(edge.VoronoiEnd);
+                        corner.Adjacents.Add(edge.VoronoiEnd.Point, edge.VoronoiEnd);
                     }
 
                     // Adding one side of every protruder will make it all
-                    corner.Touches.Add(edge.DelaunayStart);
-                    corner.Touches.Add(edge.DelaunayEnd);
+                    if (!corner.Touches.ContainsKey(edge.DelaunayStart.Point))
+                        corner.Touches.Add(edge.DelaunayStart.Point, edge.DelaunayStart);
+                    if (!corner.Touches.ContainsKey(edge.DelaunayEnd.Point))
+                        corner.Touches.Add(edge.DelaunayEnd.Point, edge.DelaunayEnd);
                 }
             }
 
             foreach (var center in map.Centers.Values)
             {
-                foreach (var edge in center.Borders)
+                foreach (var edge in center.Borders.Values)
                 {
                     if (edge.DelaunayStart != center)
                     {
-                        center.Neighbours.Add(edge.DelaunayStart);
+                        center.Neighbours.Add(edge.DelaunayStart.Point, edge.DelaunayStart);
                     }
-                    if (edge.DelaunayStart != center)
+                    if (edge.DelaunayStart != center && !center.Neighbours.ContainsKey(edge.DelaunayStart.Point))
                     {
-                        center.Neighbours.Add(edge.DelaunayStart);
+                        center.Neighbours.Add(edge.DelaunayStart.Point, edge.DelaunayStart);
                     }
 
                     // Adding one side of every border will make it all
-                    center.Corners.Add(edge.VoronoiStart);
-                    center.Corners.Add(edge.VoronoiEnd);
+                    if (!center.Corners.ContainsKey(edge.VoronoiStart.Point))
+                        center.Corners.Add(edge.VoronoiStart.Point, edge.VoronoiStart);
+                    if (!center.Corners.ContainsKey(edge.VoronoiEnd.Point))
+                        center.Corners.Add(edge.VoronoiEnd.Point, edge.VoronoiEnd);
                 }
             }
 
@@ -365,15 +369,15 @@ namespace Assets
             //    }
             //}
 
-            //if (_map != null)
-            //{
-            //    foreach (var edge in _map.Edges.Values)
-            //    {
-            //        if (edge.Props.Has(ObjectProp.River))
-            //            Debug.DrawLine(edge.VoronoiStart.Point, edge.VoronoiEnd.Point, Color.blue);
+            if (_map != null)
+            {
+                foreach (var edge in _map.Edges.Values)
+                {
+                    if (edge.Props.Has(ObjectProp.River))
+                        Debug.DrawLine(edge.VoronoiStart.Point, edge.VoronoiEnd.Point, Color.blue);
 
-            //    }
-            //}
+                }
+            }
         }
     }
 }

@@ -120,7 +120,7 @@ namespace Assets.Scripts.Managers
 
                     for (int i = 0; i < HighlightedCenter.Corners.Count; i++)
                     {
-                        var corner = HighlightedCenter.Corners.ElementAt(i);
+                        var corner = HighlightedCenter.Corners.Values.ElementAt(i);
                         _balls[i].transform.position = corner.Point;
                     }
                 }

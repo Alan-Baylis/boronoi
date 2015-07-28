@@ -1,10 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
+using Assets.Helpers;
 using UnityEngine;
 using System.Linq;
 
 namespace Assets.Scripts
 {
+    class Vector3Comparer : IEqualityComparer<Vector3>
+    {
+        private const float Tolerance = 10;
+        public Vector3Comparer() { }
+        public bool Equals(Vector3 x, Vector3 y)
+        {
+            return Math.Abs(x.x - y.x) < Tolerance && Math.Abs(x.z - y.z) < Tolerance;
+        }
+
+        public int GetHashCode(Vector3 obj)
+        {
+            return (int)(obj.x * 10000 + obj.z);
+        }
+    }
+
     class CenterComparer : IEqualityComparer<Center>
     {
         public CenterComparer() { }
@@ -88,12 +104,6 @@ namespace Assets.Scripts
             else
             {
                 var edge = new Edge(begin, end, left, right);
-
-                if (_map.Edges.ContainsKey(edge.Midpoint))
-                {
-                    var a = 3;
-                }
-
                 _map.Edges.Add(edge.Midpoint, edge);
                 return edge;
             }
@@ -111,6 +121,40 @@ namespace Assets.Scripts
                 _map.Corners.Add(nc.Point, nc);
                 return nc;
             }
+        }
+
+        public Corner CloneCornerByCenter(Vector3 pos, Corner corner, Center center)
+        {
+            var nc = CornerFactory(pos + UnityEngine.Random.onUnitSphere * 5);
+            nc.Touches.Add(center.Point, center);
+            foreach (var c in corner.Adjacents.Values)
+            {
+                c.Adjacents.Remove(corner.Point);
+                
+                if (c.Touches.ContainsKey(center.Point))
+                {
+                    nc.Adjacents.Add(c.Point, c);
+                    c.Adjacents.Add(nc.Point, nc);
+                }
+            }
+            foreach (var b in corner.Protrudes.Values.Where(x => x.DelaunayStart == center || x.DelaunayEnd == center))
+            {
+                center.Borders.Remove(b.Midpoint);
+
+                var bb = (b.VoronoiStart == corner)
+                    ? EdgeFactory(nc, b.VoronoiEnd, b.DelaunayStart, b.DelaunayEnd)
+                    : EdgeFactory(b.VoronoiStart, nc, b.DelaunayStart, b.DelaunayEnd);
+                
+                nc.Protrudes.Add(bb.Midpoint, bb);
+                center.Borders.Add(bb.Midpoint, bb);
+            }
+
+            center.Corners.Remove(corner.Point);
+            center.Corners.Add(nc.Point, nc);
+
+            //_map.Corners.Remove(corner.Point);
+
+            return nc;
         }
 
         public void RemoveEdge(Edge e)
