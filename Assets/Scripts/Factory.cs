@@ -8,7 +8,7 @@ namespace Assets.Scripts
 {
     class Vector3Comparer : IEqualityComparer<Vector3>
     {
-        private const float Tolerance = 10;
+        private const float Tolerance = 1;
         public Vector3Comparer() { }
         public bool Equals(Vector3 x, Vector3 y)
         {
@@ -17,50 +17,50 @@ namespace Assets.Scripts
 
         public int GetHashCode(Vector3 obj)
         {
-            return (int)(obj.x * 10000 + obj.z);
+            return ((int)obj.x * 10000 + (int)obj.z);
         }
     }
 
-    class CenterComparer : IEqualityComparer<Center>
-    {
-        public CenterComparer() { }
-        public bool Equals(Center x, Center y)
-        {
-            return GetHashCode(x) == GetHashCode(y);
-        }
+    //class CenterComparer : IEqualityComparer<Center>
+    //{
+    //    public CenterComparer() { }
+    //    public bool Equals(Center x, Center y)
+    //    {
+    //        return GetHashCode(x) == GetHashCode(y);
+    //    }
 
-        public int GetHashCode(Center obj)
-        {
-            return (int)(obj.Point.x * 10000 + obj.Point.z);
-        }
-    }
+    //    public int GetHashCode(Center obj)
+    //    {
+    //        return (int)(obj.Point.x * 10000 + obj.Point.z);
+    //    }
+    //}
 
-    class CornerComparer : IEqualityComparer<Corner>
-    {
-        public bool Equals(Corner x, Corner y)
-        {
-            return Math.Abs(x.Point.x - y.Point.x) < 0.1 && Math.Abs(x.Point.z - y.Point.z) < 0.1;
-        }
+    //class CornerComparer : IEqualityComparer<Corner>
+    //{
+    //    public bool Equals(Corner x, Corner y)
+    //    {
+    //        return Math.Abs(x.Point.x - y.Point.x) < 0.1 && Math.Abs(x.Point.z - y.Point.z) < 0.1;
+    //    }
 
-        public int GetHashCode(Corner obj)
-        {
-            return (int) (obj.Point.x * 10000 + obj.Point.z);
-        }
-    }
+    //    public int GetHashCode(Corner obj)
+    //    {
+    //        return ((int)obj.Point.x * 10000 + (int)obj.Point.z);
+    //    }
+    //}
 
-    class EdgeComparer : IEqualityComparer<Edge>
-    {
-        public EdgeComparer() { }
-        public bool Equals(Edge x, Edge y)
-        {
-            return x == y;
-        }
+    //class EdgeComparer : IEqualityComparer<Edge>
+    //{
+    //    public EdgeComparer() { }
+    //    public bool Equals(Edge x, Edge y)
+    //    {
+    //        return x == y;
+    //    }
 
-        public int GetHashCode(Edge obj)
-        {
-            return obj.GetHashCode();
-        }
-    }
+    //    public int GetHashCode(Edge obj)
+    //    {
+    //        return obj.GetHashCode();
+    //    }
+    //}
 
     public interface IFactory
     {
@@ -94,17 +94,49 @@ namespace Assets.Scripts
             }
         }
 
+        public void AddCornerToCenter(Center c, Corner co)
+        {
+            if (!c.Corners.ContainsKey(co.Point))
+                c.Corners.Add(co.Point, co);
+            if (co.Touches.ContainsKey(c.Point))
+                co.Touches.Add(c.Point, c);
+        }
+
         public Edge EdgeFactory(Corner begin, Corner end, Center left, Center right)
         {
             var midPoint = (begin.Point + end.Point)/2;
             if (_map.Edges.ContainsKey(midPoint))
             {
+                var e = _map.Edges[midPoint];
+                e.DelaunayStart = right;
+                left = right;
+                right = e.DelaunayEnd;
+
+                left.Neighbours[right.Point] = right;
+                right.Neighbours[left.Point] = left;
+                left.Borders[midPoint] = e;
+                //left.Corners[begin.Point] = begin;
+                //left.Corners[end.Point] = end;
+                begin.Touches[left.Point] = left;
+                end.Touches[left.Point] = left;
+
                 return _map.Edges[midPoint];
             }
             else
             {
                 var edge = new Edge(begin, end, left, right);
                 _map.Edges.Add(edge.Midpoint, edge);
+
+                begin.Adjacents[end.Point] = end;
+                end.Adjacents[begin.Point] = begin;
+                right.Borders[midPoint] = edge;
+                //right.Corners[begin.Point] = begin;
+                //right.Corners[end.Point] = end;
+                begin.Touches[right.Point] = right;
+                end.Touches[right.Point] = right;
+                begin.Protrudes[midPoint] = edge;
+                end.Protrudes[midPoint] = edge;
+
                 return edge;
             }
         }
@@ -121,6 +153,14 @@ namespace Assets.Scripts
                 _map.Corners.Add(nc.Point, nc);
                 return nc;
             }
+        }
+
+        public void AddCornerAdjacency(Corner c1, Corner c2)
+        {
+            if (!c1.Adjacents.ContainsKey(c2.Point))
+                c1.Adjacents.Add(c2.Point, c2);
+            if (!c2.Adjacents.ContainsKey(c1.Point))
+                c2.Adjacents.Add(c1.Point, c1);
         }
 
         public Corner CloneCornerByCenter(Vector3 pos, Corner corner, Center center)

@@ -23,10 +23,10 @@ public class TurboForest : MonoBehaviour
 {
 
 	public Material treeMaterial;
-	public float eachTreeBaseSize=1.5f;
+	public float eachTreeBaseSize=15f;
 	public float eachTreeSizeRandomize=0.2f;
 	public float eachTreeShadingRandomize=0.5f;
-	public int treesCount=100000;
+	public int treesCount=40000;
 
 
 	// each tree vertices
@@ -81,9 +81,9 @@ public class TurboForest : MonoBehaviour
         qv2 *= eachTreeBaseSize;
         qv3 *= eachTreeBaseSize;
 
-        GenerateTurboForest("TropicalSeasonalForest", 1);
+        GenerateTurboForest("TropicalSeasonalForest", 4);
         GenerateTurboForest("TropicalRainForest", 2);
-        GenerateTurboForest("Grassland", 4);
+        //GenerateTurboForest("Grassland", 4);
     }
 
 	int Clamp(int v,int size)

@@ -110,9 +110,6 @@ namespace Assets.Helpers
 
             foreach (var center in map.Centers.Values)
             {
-                //fuck this
-                center.OrderCorners();
-                
                 var vertindexes = new List<int>();
                 vertindexes.Add(vertices.Count);
                 vertices.Add(center.Point);
@@ -149,23 +146,45 @@ namespace Assets.Helpers
                 triangles.Add(vertindexes[0]);
                 triangles.Add(vertindexes[1]);
                 triangles.Add(vertindexes[vertindexes.Count - 1]);
+
+                if (vertices.Count > 50000)
+                {
+                    var go = new GameObject("Island");
+                    var rend = go.AddComponent<MeshRenderer>();
+                    rend.material = Resources.Load<Material>("UnityVC/VertexTerrain");
+                    var mesh = new Mesh { name = "HexMesh" };
+                    var mcomp = go.AddComponent<MeshFilter>();
+                    mcomp.mesh = mesh;
+                    mesh.vertices = vertices.ToArray();
+                    mesh.triangles = triangles.ToArray();
+                    mesh.colors = colors.ToArray();
+                    mesh.normals = normals.ToArray();
+                    mesh.uv = uvs.ToArray();
+
+                    vertices.Clear();
+                    triangles.Clear();
+                    colors.Clear();
+                    normals.Clear();
+                    uvs.Clear();
+                    vertdic.Clear();
+                }
             }
 
             // Instantiating things
-            var go = new GameObject("Island");
-            var rend = go.AddComponent<MeshRenderer>();
-            rend.material = Resources.Load<Material>("UnityVC/VertexTerrain");
-            var mesh = new Mesh { name = "HexMesh" };
-            var mcomp = go.AddComponent<MeshFilter>();
-            mcomp.mesh = mesh;
-            mesh.vertices = vertices.ToArray();
-            mesh.triangles = triangles.ToArray();
-            mesh.colors = colors.ToArray();
-            mesh.normals = normals.ToArray();
-            mesh.uv = uvs.ToArray();
+            var go2 = new GameObject("Island");
+            var rend2 = go2.AddComponent<MeshRenderer>();
+            rend2.material = Resources.Load<Material>("UnityVC/VertexTerrain");
+            var mesh2 = new Mesh { name = "HexMesh" };
+            var mcomp2 = go2.AddComponent<MeshFilter>();
+            mcomp2.mesh = mesh2;
+            mesh2.vertices = vertices.ToArray();
+            mesh2.triangles = triangles.ToArray();
+            mesh2.colors = colors.ToArray();
+            mesh2.normals = normals.ToArray();
+            mesh2.uv = uvs.ToArray();
 
-            go.AddComponent<MeshCollider>();
-            return go;
+            go2.AddComponent<MeshCollider>();
+            return go2;
         }
 
         public static void GenerateElevation(this Map map)
@@ -204,8 +223,8 @@ namespace Assets.Helpers
                 var c = lands.Dequeue();
                 foreach (var a in c.Adjacents.Values.Where(x => !x.Props.Has(ObjectProp.Water) && !x.Props.Has(ObjectProp.Shore)))
                 {
-                    var newElevation = (float)(!a.Props.Has(ObjectProp.Water)
-                        ? c.Point.y * 1.1 + Vector3.Distance(c.Point, a.Point) / 25
+                    var newElevation = (float)(a.Props.Has(ObjectProp.Land)
+                        ? c.Point.y * (1.02 + Random.Range(0f,1f) / 20f) + Vector3.Distance(c.Point.ToVector2xz(), a.Point.ToVector2xz()) / 50
                         : c.Point.y);
 
                     if (newElevation < a.Point.y)
@@ -217,15 +236,7 @@ namespace Assets.Helpers
                     }
                 }
             }
-
-            //foreach (var c in map.Corners.Values)
-            //{
-            //    c.Point = new Vector3(
-            //        c.Point.x, 
-            //        c.Point.y / mapMax * 500,
-            //        c.Point.z);
-            //}
-
+            
             foreach (var corner in map.Corners.Values)
             {
                 var sum = Vector3.zero;
@@ -338,10 +349,10 @@ namespace Assets.Helpers
                 foreach (Corner r in q.Adjacents.Values.Where(x => x.Props.Has(ObjectProp.Land)))
                 {
                     var newMoisture = q.Moisture * 
-                        0.90f;
+                        (0.95f + (Random.Range(0f,1f) - 0.5) / 10);
                     if (newMoisture > r.Moisture)
                     {
-                        r.Moisture = newMoisture;
+                        r.Moisture = (float) newMoisture;
                         queue.Enqueue(r);
                     }
                 }

@@ -48,46 +48,6 @@ namespace Assets.Scripts.Managers
             {
                 _kd.AddPoint(new double[]{center.Key.x, center.Key.z}, center.Value);
             }
-
-            //var go = new GameObject("trees");
-            //go.isStatic = true;
-            //go.transform.parent = transform;
-            //var tlist = new List<GameObject>();
-            //foreach (var center in map.Centers.Values.Where(x => x.Biome != null && x.Biome.Name.Contains("Forest")))
-            //{
-            //    var cent = center.Point;
-            //    for (int i = 0; i < center.Corners.Count - 1; i++)
-            //    {
-            //        var f = center.Corners.ElementAt(i + 1).Point;
-            //        var s = center.Corners.ElementAt(i).Point;
-
-            //        for (int j = 0; j < 5; j++)
-            //        {
-            //            var a = Random.Range(0f, 1f);
-            //            var b = Random.Range(0f, 1f);
-            //            double c = 0;
-            //            float px, py, pz;
-            //            if (a + b > 1)
-            //            {
-            //                a = 1 - a;
-            //                b = 1 - b;
-            //            }
-            //            c = 1 - a - b;
-
-            //            px = (float)((a * cent.x) + (b * f.x) + (c * s.x));
-            //            py = (float)((a * cent.y) + (b * f.y) + (c * s.y));
-            //            pz = (float)((a * cent.z) + (b * f.z) + (c * s.z));
-
-            //            var tree = (GameObject)Instantiate(Resources.Load("tree_1"));
-            //            tree.isStatic = true;
-            //            tree.transform.position = new Vector3(px, py, pz);
-            //            tree.transform.localScale = new Vector3(5, 5, 5);
-            //            tree.transform.parent = go.transform;
-            //            tlist.Add(tree);
-            //        }
-            //    }
-            //}
-            //StaticBatchingUtility.Combine(go);
         }
 
         [ExecuteInEditMode]

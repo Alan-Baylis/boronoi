@@ -16,7 +16,17 @@ using KDTree;
 
 namespace Assets
 {
-    
+    public static class Globals
+    {
+        public static int Radius =32;
+        public static int Height =2* Radius;
+        public static float RowHeight =1.5f* Radius;
+        public static float HalfWidth = (float)Math.Sqrt((Radius * Radius) - ((Radius /2) * (Radius /2)));
+        public static float Width =2* HalfWidth;
+        public static float ExtraHeight = Height - RowHeight;
+        public static float Edge = RowHeight - ExtraHeight;
+    }
+
     public class World : MonoBehaviour
     {
         public int Seed = 4;
@@ -40,12 +50,20 @@ namespace Assets
         {
             _text = Resources.Load<Texture2D>("island");
             _kd = new KDTree<Center>(2);
-            var v = GetVoronoi(Width, Height, Seed, SmoothingFactor);
-            _map = CreateDataStructure(v, _kd);
 
+            var sw = new Stopwatch();
+            sw.Start();
+            //var v = GetVoronoi(Width, Height, Seed, SmoothingFactor);
+            //_map = CreateDataStructure(v, _kd);
+            _map = CreateHexagonalStructure();
+
+            sw.Stop();
+            Debug.Log(string.Format("Generation took [{0}] milisecs", sw.ElapsedMilliseconds));
+            Debug.Log(_map.Centers.Count);
+            Debug.Log(_map.Corners.Count);
             foreach (var tup in _map.Centers)
             {
-                if(InLand(tup.Key, Width, Height, Seed))
+                if (InLand(tup.Key, Width, Height, Seed))
                 {
                     var center = tup.Value;
                     center.Props.Add(ObjectProp.Land);
@@ -65,22 +83,22 @@ namespace Assets
                 }
             }
 
-            var torem = new List<Center>();
-            foreach (var center in _map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Water)))
-            {
-                foreach (var b in center.Borders.Values.Where(x => x.VoronoiStart.Props.Has(ObjectProp.Water) && x.VoronoiEnd.Props.Has(ObjectProp.Water)))
-                {
-                    _map.Edges.Remove(b.Midpoint);
-                }
-                foreach (var c in center.Corners.Values.Where(x => x.Props.Has(ObjectProp.Water)))
-                {
-                    _map.Corners.Remove(c.Point);
-                }
-                torem.Add(center);
-            }
-            torem.ForEach(x => _map.Centers.Remove(x.Point));
-            
-            foreach (var edge in _map.Edges.Values)
+            //var torem = new List<Center>();
+            //foreach (var center in _map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Water)))
+            //{
+            //    foreach (var b in center.Borders.Values.Where(x => x.VoronoiStart.Props.Has(ObjectProp.Water) && x.VoronoiEnd.Props.Has(ObjectProp.Water)))
+            //    {
+            //        _map.Edges.Remove(b.Midpoint);
+            //    }
+            //    foreach (var c in center.Corners.Values.Where(x => x.Props.Has(ObjectProp.Water)))
+            //    {
+            //        _map.Corners.Remove(c.Point);
+            //    }
+            //    torem.Add(center);
+            //}
+            //torem.ForEach(x => _map.Centers.Remove(x.Point));
+
+            foreach (var edge in _map.Edges.Values.Where(x => x.DelaunayStart != null && x.DelaunayEnd != null))
             {
                 //edge.IsShore uses site water/land flags
                 if (edge.IsShore())
@@ -100,11 +118,9 @@ namespace Assets
             _map.GenerateBiome();
             //var go = _map.CreateDiscreteMesh();
             var go = _map.CreateContinuousMesh();
-            var im = go.AddComponent<IslandManager>();
-            im.Init(_map);
+            //var im = go.AddComponent<IslandManager>();
+            //im.Init(_map);
 
-
-            
             //TerrainStuff();
         }
 
@@ -205,8 +221,7 @@ namespace Assets
             // Finally assign the new splatmap to the terrainData:
             terrainData.SetAlphamaps(0, 0, splatmapData);
         }
-
-
+        
         private bool InLand(Vector3 p, int w, int h, int s)
         {
             return IsLandShape(new Vector3((float) (2*(p.x/w - 0.5)), 0, (float) (2*(p.z/h - 0.5))), s);
@@ -239,6 +254,58 @@ namespace Assets
                 r1 = r2 = 0.2;
             }
             return (length < r1 || (length > r1 * islandFactor && length < r2));
+        }
+
+        private Vector3 ToPixel(Vector2 hc)
+        {
+            var x = (hc.x * Globals.Width) + (((int)hc.y & 1) * Globals.Width / 2);
+            return new Vector3(x, 0, (float)(hc.y * 1.5 * Globals.Radius));
+        }
+
+        private Map CreateHexagonalStructure()
+        {
+            var map = new Map();
+            _factory = new DataFactory(map);
+
+            for (int x = 0; x < Width/Globals.Width; x++)
+            {
+                for (int y = 0; y < Height/Globals.RowHeight; y++)
+                {
+                    var hexcord = new Vector2(x, y);
+                    var pos = ToPixel(hexcord);
+
+                    var v0 = pos + new Vector3(0, 0, -Globals.Radius);
+                    var v1 = pos + new Vector3(Globals.HalfWidth, 0, -Globals.Radius/2);
+                    var v2 = pos + new Vector3(Globals.HalfWidth, 0, Globals.Radius/2);
+                    var v3 = pos + new Vector3(0, 0, Globals.Radius);
+                    var v4 = pos + new Vector3(-Globals.HalfWidth, 0, Globals.Radius/2);
+                    var v5 = pos + new Vector3(-Globals.HalfWidth, 0, -Globals.Radius/2);
+
+                    var h = _factory.CenterFactory(pos);
+                    var c0 = _factory.CornerFactory(v0);
+                    var c1 = _factory.CornerFactory(v1);
+                    var c2 = _factory.CornerFactory(v2);
+                    var c3 = _factory.CornerFactory(v3);
+                    var c4 = _factory.CornerFactory(v4);
+                    var c5 = _factory.CornerFactory(v5);
+
+                    h.Corners[v0] = c0;
+                    h.Corners[v1] = c1;
+                    h.Corners[v2] = c2;
+                    h.Corners[v3] = c3;
+                    h.Corners[v4] = c4;
+                    h.Corners[v5] = c5;
+
+                    _factory.EdgeFactory(c0, c1, null, h);
+                    _factory.EdgeFactory(c1, c2, null, h);
+                    _factory.EdgeFactory(c2, c3, null, h);
+                    _factory.EdgeFactory(c3, c4, null, h);
+                    _factory.EdgeFactory(c4, c5, null, h);
+                    _factory.EdgeFactory(c5, c0, null, h);
+                }
+            }
+
+            return map;
         }
 
         private Map CreateDataStructure(Voronoi v, KDTree<Center> kd)
