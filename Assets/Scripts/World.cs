@@ -7,12 +7,13 @@ using System.Text;
 using Assets.Helpers;
 using Assets.Scripts;
 using Assets.Scripts.Managers;
-using Delaunay;
 using Delaunay.Geo;
+using LibNoise.Generator;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
 using KDTree;
+using Voronoi = Delaunay.Voronoi;
 
 namespace Assets
 {
@@ -53,9 +54,9 @@ namespace Assets
 
             var sw = new Stopwatch();
             sw.Start();
-            //var v = GetVoronoi(Width, Height, Seed, SmoothingFactor);
-            //_map = CreateDataStructure(v, _kd);
-            _map = CreateHexagonalStructure();
+            var v = GetVoronoi(Width, Height, Seed, SmoothingFactor);
+            _map = CreateDataStructure(v, _kd);
+            //_map = CreateHexagonalStructure();
 
             sw.Stop();
             Debug.Log(string.Format("Generation took [{0}] milisecs", sw.ElapsedMilliseconds));
@@ -83,20 +84,20 @@ namespace Assets
                 }
             }
 
-            //var torem = new List<Center>();
-            //foreach (var center in _map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Water)))
-            //{
-            //    foreach (var b in center.Borders.Values.Where(x => x.VoronoiStart.Props.Has(ObjectProp.Water) && x.VoronoiEnd.Props.Has(ObjectProp.Water)))
-            //    {
-            //        _map.Edges.Remove(b.Midpoint);
-            //    }
-            //    foreach (var c in center.Corners.Values.Where(x => x.Props.Has(ObjectProp.Water)))
-            //    {
-            //        _map.Corners.Remove(c.Point);
-            //    }
-            //    torem.Add(center);
-            //}
-            //torem.ForEach(x => _map.Centers.Remove(x.Point));
+            var torem = new List<Center>();
+            foreach (var center in _map.Centers.Values.Where(x => x.Props.Has(ObjectProp.Water)))
+            {
+                foreach (var b in center.Borders.Values.Where(x => x.VoronoiStart.Props.Has(ObjectProp.Water) && x.VoronoiEnd.Props.Has(ObjectProp.Water)))
+                {
+                    _map.Edges.Remove(b.Midpoint);
+                }
+                foreach (var c in center.Corners.Values.Where(x => x.Props.Has(ObjectProp.Water)))
+                {
+                    _map.Corners.Remove(c.Point);
+                }
+                torem.Add(center);
+            }
+            torem.ForEach(x => _map.Centers.Remove(x.Point));
 
             foreach (var edge in _map.Edges.Values.Where(x => x.DelaunayStart != null && x.DelaunayEnd != null))
             {
@@ -224,13 +225,13 @@ namespace Assets
         
         private bool InLand(Vector3 p, int w, int h, int s)
         {
-            return IsLandShape(new Vector3((float) (2*(p.x/w - 0.5)), 0, (float) (2*(p.z/h - 0.5))), s);
-            //if (p.x < 0 || p.x > w || p.z < 0 || p.z > h)
-            //    return false;
+            //return IsLandShape(new Vector3((float) (2*(p.x/w - 0.5)), 0, (float) (2*(p.z/h - 0.5))), s);
+            if (p.x < 0 || p.x > w || p.z < 0 || p.z > h)
+                return false;
 
-            //if (_text.GetPixel((int)((p.x / 10000) * 1024), (int)((p.z / 10000) * 1024)).r > 0)
-            //    return true;
-            //return false;
+            if (_text.GetPixel((int)((p.x / 10000) * 1024), (int)((p.z / 10000) * 1024)).r > 0)
+                return true;
+            return false;
         }
 
         private bool IsLandShape(Vector3 v, int seed)
@@ -331,10 +332,10 @@ namespace Assets
 
             foreach (var edge in map.Edges.Values)
             {
-                edge.VoronoiStart.Protrudes.Add(edge.Midpoint, edge);
-                edge.VoronoiEnd.Protrudes.Add(edge.Midpoint, edge);
-                edge.DelaunayStart.Borders.Add(edge.Midpoint, edge);
-                edge.DelaunayEnd.Borders.Add(edge.Midpoint, edge);
+                edge.VoronoiStart.Protrudes[edge.Midpoint]= edge;
+                edge.VoronoiEnd.Protrudes[edge.Midpoint]= edge;
+                edge.DelaunayStart.Borders[edge.Midpoint]= edge;
+                edge.DelaunayEnd.Borders[edge.Midpoint]= edge;
             }
 
             foreach (var corner in map.Corners.Values)
@@ -343,18 +344,18 @@ namespace Assets
                 {
                     if (edge.VoronoiStart != corner)
                     {
-                        corner.Adjacents.Add(edge.VoronoiStart.Point, edge.VoronoiStart);
+                        corner.Adjacents[edge.VoronoiStart.Point]= edge.VoronoiStart;
                     }
                     if (edge.VoronoiEnd != corner)
                     {
-                        corner.Adjacents.Add(edge.VoronoiEnd.Point, edge.VoronoiEnd);
+                        corner.Adjacents[edge.VoronoiEnd.Point]= edge.VoronoiEnd;
                     }
 
                     // Adding one side of every protruder will make it all
                     if (!corner.Touches.ContainsKey(edge.DelaunayStart.Point))
-                        corner.Touches.Add(edge.DelaunayStart.Point, edge.DelaunayStart);
+                        corner.Touches[edge.DelaunayStart.Point]= edge.DelaunayStart;
                     if (!corner.Touches.ContainsKey(edge.DelaunayEnd.Point))
-                        corner.Touches.Add(edge.DelaunayEnd.Point, edge.DelaunayEnd);
+                        corner.Touches[edge.DelaunayEnd.Point]= edge.DelaunayEnd;
                 }
             }
 
@@ -364,18 +365,18 @@ namespace Assets
                 {
                     if (edge.DelaunayStart != center)
                     {
-                        center.Neighbours.Add(edge.DelaunayStart.Point, edge.DelaunayStart);
+                        center.Neighbours[edge.DelaunayStart.Point]= edge.DelaunayStart;
                     }
                     if (edge.DelaunayStart != center && !center.Neighbours.ContainsKey(edge.DelaunayStart.Point))
                     {
-                        center.Neighbours.Add(edge.DelaunayStart.Point, edge.DelaunayStart);
+                        center.Neighbours[edge.DelaunayStart.Point]= edge.DelaunayStart;
                     }
 
                     // Adding one side of every border will make it all
                     if (!center.Corners.ContainsKey(edge.VoronoiStart.Point))
-                        center.Corners.Add(edge.VoronoiStart.Point, edge.VoronoiStart);
+                        center.Corners[edge.VoronoiStart.Point]= edge.VoronoiStart;
                     if (!center.Corners.ContainsKey(edge.VoronoiEnd.Point))
-                        center.Corners.Add(edge.VoronoiEnd.Point, edge.VoronoiEnd);
+                        center.Corners[edge.VoronoiEnd.Point]= edge.VoronoiEnd;
                 }
             }
 
