@@ -82,7 +82,7 @@ public class TurboForest : MonoBehaviour
         qv3 *= eachTreeBaseSize;
 
         GenerateTurboForest("TropicalSeasonalForest", 4);
-        GenerateTurboForest("TropicalRainForest", 2);
+        //GenerateTurboForest("TropicalRainForest", 2);
         //GenerateTurboForest("Grassland", 4);
     }
 
@@ -279,7 +279,7 @@ public class TurboForest : MonoBehaviour
 			if(r>.5f) type=2;
 			if(r>.75f) type=3;
 
-            type = deftype;
+            //type = deftype;
 			if(type==1) typeShift.x=.5f;
 			else if(type==2) typeShift.y=.5f;
 			else if(type==3) {typeShift.x=.5f;typeShift.y=.5f;}

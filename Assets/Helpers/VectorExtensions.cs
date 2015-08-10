@@ -33,5 +33,14 @@ namespace Assets.Helpers
             //brnkhy - this looks retarded
             return ((a.x - c.x) * (b.z - c.z) - (a.z - c.z) * (b.x - c.x)) / 2;
         }
+
+        public static Vector3 ToPixel(this Vector2 hc)
+        {
+            var x = (hc.x * Globals.Width) + (((int)hc.y & 1) * Globals.Width / 2);
+            return new Vector3(x, 0, (float)(hc.y * 1.5 * Globals.Radius));
+        }
+
+        
+
     }
 }

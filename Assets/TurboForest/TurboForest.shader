@@ -66,14 +66,14 @@
 			fixed4 c=tex2D(_MainTex, input.tex.xy);
 			if(c.a<.5) discard;
 
-			float3 bump=tex2D(_Bump, input.tex.xy).xyz;
+			//float3 bump=tex2D(_Bump, input.tex.xy).xyz;
 
-			bump.xy=0.5-bump.xy;
+			//bump.xy=0.5-bump.xy;
 
-			float att= (dot( normalize(bump*2-0.5) ,normalize(-input.lightDirection.xyz))+1)/2 ;
+			//float att= (dot( normalize(bump*2-0.5) ,normalize(-input.lightDirection.xyz))+1)/2 ;
 
-			c.rgb*=input.tint;
-			c.rgb=float3(UNITY_LIGHTMODEL_AMBIENT.rgb)*c.rgb+c.rgb*att*_LightColor0.rgb;
+			//c.rgb*=input.tint;
+			//c.rgb=float3(UNITY_LIGHTMODEL_AMBIENT.rgb)*c.rgb+c.rgb*att*_LightColor0.rgb;
 			
 			return c;
 		}

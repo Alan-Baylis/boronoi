@@ -80,22 +80,40 @@ namespace Assets.Helpers
                 triangles.Add(startingIndex);
                 triangles.Add(startingIndex + 1);
                 triangles.Add(lastVertex);
-            }
-            
-            // Instantiating things
-            var go = new GameObject("Island");
-            var rend = go.AddComponent<MeshRenderer>();
-            rend.material = Resources.Load<Material>("UnityVC/VertexTerrain");
-            var mesh = new Mesh { name = "HexMesh" };
-            var mcomp = go.AddComponent<MeshFilter>();
-            mcomp.mesh = mesh;
-            mesh.vertices = vertices.ToArray();
-            mesh.triangles = triangles.ToArray();
-            mesh.colors = colors.ToArray();
-            mesh.normals = normals.ToArray();
+                if (vertices.Count > 50000)
+                {
+                    var go = new GameObject("Island");
+                    var rend = go.AddComponent<MeshRenderer>();
+                    rend.material = Resources.Load<Material>("UnityVC/VertexTerrain");
+                    var mesh = new Mesh { name = "HexMesh" };
+                    var mcomp = go.AddComponent<MeshFilter>();
+                    mcomp.mesh = mesh;
+                    mesh.vertices = vertices.ToArray();
+                    mesh.triangles = triangles.ToArray();
+                    mesh.colors = colors.ToArray();
+                    mesh.normals = normals.ToArray();
 
-            go.AddComponent<MeshCollider>();
-            return go;
+                    vertices.Clear();
+                    triangles.Clear();
+                    colors.Clear();
+                    normals.Clear();
+                }
+            }
+
+            // Instantiating things
+            var go2 = new GameObject("Island");
+            var rend2 = go2.AddComponent<MeshRenderer>();
+            rend2.material = Resources.Load<Material>("UnityVC/VertexTerrain");
+            var mesh2 = new Mesh { name = "HexMesh" };
+            var mcomp2 = go2.AddComponent<MeshFilter>();
+            mcomp2.mesh = mesh2;
+            mesh2.vertices = vertices.ToArray();
+            mesh2.triangles = triangles.ToArray();
+            mesh2.colors = colors.ToArray();
+            mesh2.normals = normals.ToArray();
+
+            go2.AddComponent<MeshCollider>();
+            return go2;
         }
 
         public static GameObject CreateContinuousMesh(this Map map)
@@ -110,6 +128,8 @@ namespace Assets.Helpers
 
             foreach (var center in map.Centers.Values)
             {
+                center.OrderCorners();
+
                 var vertindexes = new List<int>();
                 vertindexes.Add(vertices.Count);
                 vertices.Add(center.Point);
